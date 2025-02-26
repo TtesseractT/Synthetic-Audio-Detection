@@ -1,127 +1,146 @@
-# Audio Classification Pipeline: Real vs Synthetic Detection
+# 🎵 AI-Powered Audio Classification: Real vs Synthetic Detection
 
-This repository contains an end-to-end solution for audio classification focused on distinguishing between real and synthetic audio signals. The project implements a comprehensive pipeline for audio processing, data augmentation, model training, and inference using state-of-the-art deep learning techniques.
+![Audio Analysis](https://source.unsplash.com/1600x400/?sound,technology)
 
-## Overview
+## 📌 Overview
 
-The project is organized into several key components:
+This repository provides a **high-performance pipeline** for detecting whether an audio file is **real or AI-generated**. The system processes, augments, trains, and classifies audio files using **deep learning** and **spectrogram analysis**, leveraging **PyTorch, torchaudio, librosa, and timm**.
 
-- **Audio Augmentation:**  
-  Enhance your dataset with multiple augmentation techniques—time stretching, pitch shifting, dynamic range compression, noise addition, tremolo, phaser, time shifting, and more—to improve model generalization.  
-  *(See [audio_augmneter_batch.py](&#8203;:contentReference[oaicite:0]{index=0}))*
+🚀 **Key Features:**
+- **🔄 Audio Augmentation** – Enhance datasets with speed changes, pitch shifts, noise injection, and filtering.
+- **🎛️ Format Conversion & Segmentation** – Standardize audio files and split them into fixed-length segments.
+- **🧠 Deep Learning Model** – Train and merge multiple classifiers for robust inference.
+- **📊 Probability-Based Inference** – Process overlapping windows and smooth classification results.
 
-- **Audio Conversion & Segmentation:**  
-  Standardize audio inputs by converting various formats (MP3, WAV, FLAC, etc.) to a uniform WAV format with a consistent sample rate and mono channel. Additionally, long audio files are segmented into fixed-duration chunks (e.g., 4-second segments) using ffmpeg.  
-  *(See [audio_convert_wave.py](&#8203;:contentReference[oaicite:1]{index=1}) and [audio_convert_segmenter.py](&#8203;:contentReference[oaicite:2]{index=2}))*
+---
 
-- **File Renaming:**  
-  Ensure unique file identification by renaming audio files based on the first 6 characters of their SHA256 hash.  
-  *(See [file_rename_hash.py](&#8203;:contentReference[oaicite:3]{index=3}))*
+## 📂 Project Structure
 
-- **Model Training:**  
-  Train individual binary classifiers (sub-models) on spectrogram data derived from audio files. The training script incorporates data augmentation, logging, checkpointing, and evaluation routines.  
-  *(See [train_submodel.py](&#8203;:contentReference[oaicite:4]{index=4}))*
-
-- **Model Merging:**  
-  Merge several sub-models into a unified multi-head classifier. This merged model leverages the outputs of individual sub-models—each providing a separate synthetic prediction—and averages their real predictions for robust inference.  
-  *(See [merge_model_classifier.py](&#8203;:contentReference[oaicite:5]{index=5}))*
-
-- **Inference Pipeline:**  
-  Process new audio files using an overlapping window approach, convert them into spectrograms, and classify each segment with the merged model. The pipeline supports probability smoothing and thresholding for reliable decision-making.  
-  *(See [inference_classifier.py](&#8203;:contentReference[oaicite:6]{index=6}))*
-
-An example output of the inference process is provided in the `results.json` file.  
-*(See [results.json](&#8203;:contentReference[oaicite:7]{index=7}))*
-
-## Repository Structure
-
+```plaintext
 .
-├── audio_augmneter_batch.py      # Audio data augmentation script
-├── audio_convert_segmenter.py    # Audio segmentation using ffmpeg
-├── audio_convert_wave.py         # Audio conversion to standardized WAV format
-├── file_rename_hash.py           # File renaming based on SHA256 hash
-├── inference_classifier.py       # Inference script using the merged multi-head classifier
-├── merge_model_classifier.py     # Merges sub-models into a multi-head classifier
-├── train_submodel.py             # Training script for binary classifiers on spectrogram data
-├── results.json                  # Sample output from the inference process
-└── README.md                     # This README file
+├── audio_augmneter_batch.py      # Augments audio data with various transformations
+├── audio_convert_segmenter.py    # Splits audio files into 4-sec mono segments
+├── audio_convert_wave.py         # Converts audio to WAV format (32kHz, mono, 16-bit PCM)
+├── file_rename_hash.py           # Renames files using SHA256 hash values
+├── train_submodel.py             # Trains individual binary classifiers on spectrograms
+├── merge_model_classifier.py     # Merges multiple sub-models into a unified classifier
+├── inference_classifier.py       # Runs inference using the merged classifier model
+├── results.json                  # Sample output of classification results
+└── README.md                     # This file
+```
 
-## Getting Started
+---
 
-### Prerequisites
+## 📦 Installation
 
+### ✅ Prerequisites
 - **Python 3.x**
-- **PyTorch** and **torchaudio**
+- **PyTorch + torchvision + torchaudio**
 - **librosa**
-- **timm**
-- **ffmpeg** (command-line tool)
-- Other required Python packages: numpy, pandas, tqdm, argparse, etc.
+- **timm (Torch Image Models)**
+- **ffmpeg**
 
-### Installation
+### ⚡ Setup
+```bash
+# Clone the repository
+git clone https://github.com/yourusername/your-repo.git
+cd your-repo
 
-1. **Clone the Repository:**
+# Create a virtual environment
+python -m venv venv
+source venv/bin/activate  # On Windows use: venv\Scripts\activate
 
-   git clone https://github.com/yourusername/your-repo.git
-   cd your-repo
+# Install dependencies
+pip install -r requirements.txt
+```
 
-2. **Create and Activate a Virtual Environment (Optional):**
+---
 
-   python -m venv venv
-   source venv/bin/activate  # On Windows: venv\Scripts\activate
+## 🎯 Usage
 
-3. **Install Dependencies:**
+### 🔄 **Audio Augmentation**
+```bash
+python audio_augmneter_batch.py -i <input_folder> -o <output_folder>
+```
 
-   pip install -r requirements.txt
+### 🎛 **Audio Conversion & Segmentation**
+```bash
+python audio_convert_wave.py -i <input_folder> -o <output_folder>
+python audio_convert_segmenter.py -i <input_folder> -o <output_folder>
+```
 
-### Usage
+### 🔑 **File Renaming (SHA256-based)**
+```bash
+python file_rename_hash.py -i <directory> -r  # -r for recursive mode
+```
 
-- **Audio Augmentation:**
+### 🏋️ **Training a Sub-Model**
+```bash
+python train_submodel.py --data-dir <dataset_directory> --epochs 100 --batch-size 32
+```
 
-  python audio_augmneter_batch.py -i <input_audio_or_folder> -o <output_folder>
+### 🔗 **Merging Sub-Models into One Classifier**
+Prepare a CSV file with columns `model_filename`, `synthetic_class`, and `real_class`:
+```bash
+python merge_model_classifier.py --submodels-folder <folder> --csv-file <csv_file> --output-path merged_model.pth
+```
 
-- **Audio Conversion & Segmentation:**
+### 🎯 **Inference on New Audio Files**
+```bash
+python inference_classifier.py --merged-model merged_model.pth --audio <audio_file.wav> --threshold 0.5 --smooth
+```
 
-  python audio_convert_wave.py -i <input_folder> -o <output_folder>
-  python audio_convert_segmenter.py -i <input_file_or_folder> -o <output_folder>
+---
 
-- **File Renaming:**
+## 🏆 Model Training & Architecture
 
-  python file_rename_hash.py -i <directory> [-r]
+📊 **Training Workflow:**
+1. **Preprocess audio files** → Convert to spectrograms
+2. **Train binary classifiers** → Identify real vs synthetic samples
+3. **Merge sub-models** → Create a single ensemble classifier
+4. **Perform inference** → Classify new audio samples
 
-- **Training a Sub-model:**
+🛠 **Architecture Highlights:**
+- **ResNet-based classifier** (pretrained `timm` models)
+- **Binary classification per sub-model** (Real vs Synthetic)
+- **Multi-head merged classifier** for robust predictions
 
-  python train_submodel.py --data-dir <dataset_directory> [other options]
+---
 
-- **Merging Sub-models:**
+## 📈 Example Output
+📌 Sample classification output in `results.json`:
+```json
+{
+    "filename": "audio_sample.wav",
+    "segments": [
+        {"start_sec": 0.0, "end_sec": 4.0, "label": "SyntheticOne"},
+        {"start_sec": 4.0, "end_sec": 8.0, "label": "Real"}
+    ],
+    "percentages": {
+        "SyntheticOne": 50.24,
+        "Real": 48.02
+    }
+}
+```
 
-  Prepare a CSV file with the columns model_filename, synthetic_class, and real_class. Then run:
+---
 
-  python merge_model_classifier.py --submodels-folder <folder> --csv-file <csv_file> --output-path <merged_model.pth>
+## 🤝 Contributing
+We welcome contributions! Please submit a pull request or open an issue for suggestions, bug fixes, or feature requests.
 
-- **Inference:**
+---
 
-  python inference_classifier.py --merged-model <merged_model.pth> --audio <audio_file.wav> [--threshold 0.5 --smooth]
+## 📜 License
+This project is licensed under the **MIT License**.
 
-## Contributing
+---
 
-Contributions are welcome! Please submit issues or pull requests with improvements, bug fixes, or suggestions.
+## 📚 Citations & References
+This project leverages open-source frameworks:
+- **PyTorch**: https://pytorch.org/
+- **torchaudio**: https://pytorch.org/audio/
+- **librosa**: https://librosa.org/
+- **timm (Torch Image Models)**: https://github.com/rwightman/pytorch-image-models
 
-## License
+*Developed with ❤️ by [Your Name / Organization]* 🚀
 
-This project is licensed under the MIT License. See the LICENSE file for details.
-
-## Acknowledgments
-
-- This project leverages powerful libraries such as PyTorch, torchaudio, librosa, and timm.
-- Special thanks to the open-source community for providing the tools and resources that made this project possible.
-
-## Citations
-
-- audio_augmneter_batch.py: :contentReference[oaicite:8]{index=8}
-- audio_convert_segmenter.py: :contentReference[oaicite:9]{index=9}
-- audio_convert_wave.py: :contentReference[oaicite:10]{index=10}
-- file_rename_hash.py: :contentReference[oaicite:11]{index=11}
-- inference_classifier.py: :contentReference[oaicite:12]{index=12}
-- merge_model_classifier.py: :contentReference[oaicite:13]{index=13}
-- results.json: :contentReference[oaicite:14]{index=14}
-- train_submodel.py: :contentReference[oaicite:15]{index=15}
