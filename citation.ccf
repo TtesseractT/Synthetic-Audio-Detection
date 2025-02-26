@@ -1,0 +1,12 @@
+cff-version: 1.2.0
+message: "If you use this software in your research, please cite it as below."
+title: "Generative Music Detection - GMD"
+version: "1.0.0"
+date-released: "2025-02-26"
+authors:
+  - given-names: "Sabian"
+    family-names: "Hibbs"
+    orcid: "https://orcid.org/0009-0006-5716-8965"
+license: "MIT"
+doi: ""
+url: "https://github.com/TtesseractT/Synthetic-Audio-Detection"
