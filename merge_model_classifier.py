@@ -73,7 +73,7 @@ class ModularMultiHeadClassifier(nn.Module):
             # Assume index 0 corresponds to Synthetic and index 1 to Real.
             synthetic_list.append(out[:, 0:1])
             real_list.append(out[:, 1:2])
-        synthetic_cat = torch.cat(synthetic_list, dim=1)         # [B, N]
+        synthetic_cat = torch.cat(synthetic_list, dim=1)           # [B, N]
         real_cat = torch.cat(real_list, dim=1)                     # [B, N]
         real_mean = torch.mean(real_cat, dim=1, keepdim=True)      # [B, 1]
         return torch.cat([synthetic_cat, real_mean], dim=1)        # [B, N+1]
