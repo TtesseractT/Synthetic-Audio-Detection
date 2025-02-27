@@ -10,31 +10,6 @@
             "start_sec": 4.0,
             "end_sec": 8.0,
             "label": "SyntheticOne"
-        },
-        {
-            "start_sec": 8.0,
-            "end_sec": 12.0,
-            "label": "SyntheticOne"
-        },
-        {
-            "start_sec": 12.0,
-            "end_sec": 16.0,
-            "label": "SyntheticOne"
-        },
-        {
-            "start_sec": 16.0,
-            "end_sec": 20.0,
-            "label": "SyntheticOne"
-        },
-        {
-            "start_sec": 20.0,
-            "end_sec": 24.0,
-            "label": "SyntheticOne"
-        },
-        {
-            "start_sec": 24.0,
-            "end_sec": 28.0,
-            "label": "SyntheticOne"
         }
     ],
     "percentages": {

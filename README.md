@@ -106,14 +106,29 @@ python inference_classifier.py --merged-model merged_model.pth --audio <audio_fi
 📌 Sample classification output in `results.json`:
 ```json
 {
-    "filename": "audio_sample.wav",
+    "filename": ".\\Dataset\\Wav\\test.wav",
     "segments": [
-        {"start_sec": 0.0, "end_sec": 4.0, "label": "SyntheticOne"},
-        {"start_sec": 4.0, "end_sec": 8.0, "label": "Real"}
+        {
+            "start_sec": 0.0,
+            "end_sec": 4.0,
+            "label": "SyntheticOne"
+        },
+        {
+            "start_sec": 4.0,
+            "end_sec": 8.0,
+            "label": "SyntheticOne"
+        }
     ],
     "percentages": {
-        "SyntheticOne": 50.24,
-        "Real": 48.02
+        "SyntheticOne": 50.24093985557556,
+        "SyntheticTwo": 50.24093985557556,
+        "SyntheticThree": 50.24093985557556,
+        "SyntheticFour": 50.24093985557556,
+        "SyntheticFive": 50.24093985557556,
+        "SyntheticSix": 50.24093985557556,
+        "SyntheticSeven": 50.24093985557556,
+        "SyntheticEight": 50.24093985557556,
+        "Real": 48.02742600440979
     }
 }
 ```
