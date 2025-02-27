@@ -16,10 +16,8 @@ import timm
 from dataclasses import dataclass
 from scipy.ndimage import gaussian_filter1d
 
-########################################################
-# 1. Multi-Head Model: Each sub-model => [Real, Synthetic]
-########################################################
 
+# 1. Multi-Head Model: Each sub-model => [Real, Synthetic]
 class BinaryClassifier(nn.Module):
     """
     Sub-model with a backbone + 2-output head:
@@ -67,10 +65,8 @@ class ModularMultiHeadClassifier(nn.Module):
         real_mean = torch.mean(real_cat, dim=1, keepdim=True)  # => [B, 1]
         return torch.cat([syn_cat, real_mean], dim=1)  # => [B, N+1]
 
-########################################################
-# 2. Loading the Merged Model from .pth (with metadata)
-########################################################
 
+# 2. Loading the Merged Model from .pth (with metadata)
 def load_merged_model(merged_path: str, device: torch.device, backbone_name='resnet18'):
     """
     Loads the multi-head model from the saved checkpoint.
@@ -119,10 +115,8 @@ def load_merged_model(merged_path: str, device: torch.device, backbone_name='res
     print("Rebuilt merged model => dummy output shape:", dummy_out.shape)
     return final_model, metadata
 
-########################################################
-# 3. Overlapping Window + Spectrogram Logic
-########################################################
 
+# 3. Overlapping Window + Spectrogram Logic
 @dataclass
 class AudioConfig:
     sample_rate: int = 32000
@@ -188,10 +182,8 @@ def slice_waveform(wf: torch.Tensor, sr: int, cfg: AudioConfig):
         timestamps.append(start_idx / sr)
     return chunks, timestamps
 
-########################################################
-# 4. Probability Interpretation (Using Metadata)
-########################################################
 
+# 4. Probability Interpretation (Using Metadata)
 def interpret_multihead_logits(logits: torch.Tensor, threshold=0.5, 
                                synthetic_names: List[str]=None, real_name: str = "Real"):
     """
@@ -214,10 +206,8 @@ def interpret_multihead_logits(logits: torch.Tensor, threshold=0.5,
             label = f"Synthetic_{idx+1}"
     return label, s.cpu().numpy()
 
-########################################################
-# 5. Main Inference Logic
-########################################################
 
+# 5. Main Inference Logic
 def main():
     parser = argparse.ArgumentParser(
         description="Multi-head inference with overlapping windows using metadata from the merged model."
@@ -233,6 +223,8 @@ def main():
 
     # For reproducibility
     seed = 9
+    # Use if needed:
+    # seed = (random.randint(1, 100) if seed is None else seed)
     random.seed(seed)
     np.random.seed(seed)
     torch.manual_seed(seed)
