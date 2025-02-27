@@ -25,8 +25,7 @@ This repository provides a **high-performance pipeline** for detecting whether a
 ├── train_submodel.py             # Trains individual binary classifiers on spectrograms
 ├── merge_model_classifier.py     # Merges multiple sub-models into a unified classifier
 ├── inference_classifier.py       # Runs inference using the merged classifier model
-├── results.json                  # Sample output of classification results
-└── README.md                     # This file
+
 ```
 
 ---
@@ -34,7 +33,7 @@ This repository provides a **high-performance pipeline** for detecting whether a
 ## 📦 Installation
 
 ### ✅ Prerequisites
-- **Python 3.x**
+- **Python 3.10**
 - **PyTorch + torchvision + torchaudio**
 - **librosa**
 - **timm (Torch Image Models)**
@@ -43,12 +42,8 @@ This repository provides a **high-performance pipeline** for detecting whether a
 ### ⚡ Setup
 ```bash
 # Clone the repository
-git clone https://github.com/yourusername/your-repo.git
-cd your-repo
-
-# Create a virtual environment
-python -m venv venv
-source venv/bin/activate  # On Windows use: venv\Scripts\activate
+git clone https://github.com/TtesseractT/Synthetic-Audio-Detection.git
+cd Synthetic-Audio-Detection
 
 # Install dependencies
 pip install -r requirements.txt
