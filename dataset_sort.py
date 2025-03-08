@@ -49,21 +49,7 @@ def parse_arguments():
     parser.add_argument("-o", "--output_dir", required=True, help="Output directory to store sorted audio files")
     parser.add_argument("-s", "--split", type=float, default=0.8, help="Split ratio for train and test data (default: 0.8)")
     parser.add_argument("-t", "--threads", type=int, default=1, help="Number of threads to use (default: 1)")
-    parser.add_argument("-h", "--help", action="help", help="""
-    Example usage:
-    python dataset_sort.py -i input_dir -o output_dir -s 0.8 -t 4
-    
-    This will sort the audio files in the input directory into Train and Test directories
-    based on the class labels. The Train and Test directories will be created in the output directory.
-    The audio files will be split based on the split ratio of 0.8 (80% Train, 20% Test).
-    
-    args:
-    -i (--input_dir): Input directory containing audio files
-    -o (--output_dir): Output directory to store sorted audio files
-    -s (--split): Split ratio for train and test data (default: 0.8)
-    -t (--threads): Number of threads to use (default: 1)
-    -h (--help): Display help message
-    """)
+
     return parser.parse_args()
 
 def safe_move(source_file, target_file):
