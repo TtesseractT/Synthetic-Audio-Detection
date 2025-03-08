@@ -30,6 +30,59 @@ import torch.nn.init as init
 # Suppress warnings
 warnings.filterwarnings("ignore")
 
+'''UTF-8
+
+1) MEL SPECTROGRAM (simplified):
+
+   For a waveform w(t) of length T:
+   
+   1. Compute Short-Time Fourier Transform (STFT) at frames n ∈ [1..N]:
+      X(n, ω) = ∑ ( w(t) ⋅ h(t - nH) ⋅ e^(-jωt) ),  (windowed & hop-based)
+
+   2. Convert to Mel scale M with triangular filterbanks:
+      S_mel(n, m) = ∑ ( |X(n, ω)|² ⋅ F_m(ω) ),       (F_m are the mel filters)
+
+   3. Convert amplitude to dB:
+      S_dB(n, m) = 10 ⋅ log10( S_mel(n, m) + ε ),   (ε to avoid log(0))
+
+────────────────────────────────────────────────────────────────────────────────
+
+2) SOFTMAX & CROSS-ENTROPY LOSS:
+
+   Given a model f(x; θ) producing logits z = (z₁, z₂, …, z_C),
+   define probability outputs pᵢ via softmax:
+
+     pᵢ = exp(zᵢ) / ∑ ( exp(zⱼ) ),   j=1..C
+   
+   With ground-truth one-hot label y = (y₁, y₂, …, y_C),
+   the cross-entropy loss L is:
+
+     L(θ) = - ∑ ( yᵢ log pᵢ ),   i=1..C
+
+────────────────────────────────────────────────────────────────────────────────
+
+3) PARAMETER UPDATE (ADAMW, simplified):
+
+   Let gᵗ = ∂L/∂θᵗ be the gradient at time t. AdamW updates θᵗ per step t as:
+
+   mᵗ ← β₁ m^(t-1) + (1 - β₁) gᵗ
+   vᵗ ← β₂ v^(t-1) + (1 - β₂) (gᵗ)²
+
+   m̂ᵗ = mᵗ / (1 - β₁ᵗ),   v̂ᵗ = vᵗ / (1 - β₂ᵗ)
+
+   θ^(t+1) ← θᵗ - α ⋅ m̂ᵗ / ( √v̂ᵗ + ε ) - λ ⋅ θᵗ
+
+   (α = learning rate, β₁, β₂ ∈ [0,1], ε is a small constant, λ is weight decay)
+
+────────────────────────────────────────────────────────────────────────────────
+
+4) PREDICTION:
+
+   After forward pass zᵢ = fᵢ(x; θ),
+   predicted label ŷ = argmaxᵢ [ zᵢ ] or argmaxᵢ [ pᵢ ].
+
+'''
+
 
 def parse_args():
     """Parses command-line arguments."""
