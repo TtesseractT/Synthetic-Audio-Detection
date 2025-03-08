@@ -1,4 +1,10 @@
-# train_submodel.py
+#!/usr/bin/env python3
+# Company: Uhmbrella Ltd 2025
+# Author: Sabian Hibbs
+# Date: 2025-01-01
+# Version: 1.0
+# License: MIT
+
 
 import os
 import sys

@@ -1,4 +1,16 @@
 #!/usr/bin/env python3
+# Company: Uhmbrella Ltd 2025
+# Author: Sabian Hibbs
+# Date: 2025-01-01
+# Version: 1.0
+# License: MIT
+
+
+import argparse
+import os
+import shutil
+
+
 """
 This script checks for overlapping audio files between the 'train' and 'test'
 subdirectories of a given base directory. Each of these subdirectories is
@@ -36,9 +48,6 @@ The directory structure expected is:
                *.wav
 """
 
-import argparse
-import os
-import shutil
 
 def parse_arguments():
     parser = argparse.ArgumentParser(

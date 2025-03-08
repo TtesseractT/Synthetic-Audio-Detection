@@ -1,4 +1,23 @@
 #!/usr/bin/env python3
+# Company: Uhmbrella Ltd 2025
+# Author: Sabian Hibbs
+# Date: 2025-01-01
+# Version: 1.0
+# License: MIT
+
+
+import argparse
+import os
+import shutil
+import random
+import concurrent.futures
+import threading
+from tqdm import tqdm
+
+# Global lock to ensure thread-safe file moves and progress bar updates
+move_lock = threading.Lock()
+pbar = None  # Global progress bar
+
 """
 This script takes an input directory containing class folders (e.g. "class0", "class1"),
 each with audio files (e.g. "1f6999ff03018e9a_add_white_noise_0.002498277_Segment_134.wav"),
@@ -17,17 +36,6 @@ For example, if -s 0.5, roughly 50% of the files in each class folder will be mo
 If -s 0.8, then 80% of the files go to train and the remaining 20% go to test.
 """
 
-import argparse
-import os
-import shutil
-import random
-import concurrent.futures
-import threading
-from tqdm import tqdm
-
-# Global lock to ensure thread-safe file moves and progress bar updates
-move_lock = threading.Lock()
-pbar = None  # Global progress bar
 
 def parse_arguments():
     parser = argparse.ArgumentParser(

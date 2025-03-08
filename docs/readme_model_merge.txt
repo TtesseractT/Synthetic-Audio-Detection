@@ -1,5 +1,3 @@
-
-
 The modelclass.csv shown below is used to allocate the output nodes of the
 merged multi-head classification model. It is utilized by the 'model_merger.py'
 script to map each individual binary classification model (m(n).pth) to its

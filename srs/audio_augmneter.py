@@ -1,3 +1,21 @@
+#!/usr/bin/env python3
+# Company: Uhmbrella Ltd 2025
+# Author: Sabian Hibbs
+# Date: 2025-01-01
+# Version: 1.0
+# License: MIT
+
+
+import argparse
+import librosa
+import numpy as np
+import os
+import pandas as pd
+from tqdm import tqdm
+import multiprocessing
+import soundfile as sf
+from scipy.signal import lfilter
+
 '''
 This script will use librosa library and others to augment the audio files in the dataset.
 
@@ -33,18 +51,6 @@ Script will use ALL available cores on system to run the augmentations in parall
 
 Progress of the augmentation will be displayed in the console via TQDM progress bar - nothing else. 
 '''
-
-
-import argparse
-import librosa
-import numpy as np
-import os
-import pandas as pd
-from tqdm import tqdm
-import multiprocessing
-import soundfile as sf
-from scipy.signal import lfilter
-
 
 def augment_speed_up(y, min_rate=1.0, max_rate=1.5):
     rate = np.random.uniform(min_rate, max_rate)
