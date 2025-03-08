@@ -4,11 +4,11 @@ This script will take the input directory containing audio files
 and sort them into the output directory based on the class labels.
 
 Args:
--i (--input_dir): Input directory containing audio files
--o (--output_dir): Output directory to store sorted audio files
--s (--split): Split ratio for train and test data (default: 0.8)
--h (--help): Display help message
--t (--threads): Number of threads to use (default: 1)
+    -i (--input_dir): Input directory containing audio files
+    -o (--output_dir): Output directory to store sorted audio files
+    -s (--split): Split ratio for train and test data (default: 0.8)
+    -h (--help): Display help message
+    -t (--threads): Number of threads to use (default: 1)
 
 Logic:
 1. Parse the input arguments
@@ -18,173 +18,108 @@ Logic:
 5. Split the class labels into train and test sets
 6. Create the train and test directories in the output directory
    Note: No audio files are duplicated between the 'Test' and 'Train' directories.
+         This includes audio files with the same name but different content.
+         The name of each input directory audio file will have the following format:
+             {original_file_name}_{augmentation_technique}_{random_value}.wav
+
+         The original_file_name name cannot be duplicated between the 'Test' and 'Train' directories.
+
+         This means that if there is 20 variations of one {original_file_name} in the input directory,
+         these 20 audio files with the same {original_file_name} will be in the same directory
+         (either 'Test' or 'Train'). The audio files will be randomly split between the 'Test' and 'Train' directories depending on the split ratio.
+
 7. Move the audio files to the respective directories based on the class labels
-
-Input Data (audio files) Directory Structure:
-    input_dir
-    ├── class1  # class label 1
-    │   ├── audio1.wav
-    │   ├── audio2.wav
-    │   └── ...
-    └── class2  # class label 2
-        ├── audio1.wav  # audio file 1
-        ├── audio2.wav  # audio file 2
-        └── ...
-
-Output Data (audio files) Directory Structure:
-    output_dir
-        ├── Test
-        │   ├── class1  # class label 1
-        │   │   └── ... # audio files
-        │   └── class2  # class label 2
-        │       └── ... # audio files
-        └── Train
-            ├── class1  # class label 1
-            │   └── ... # audio files
-            └── class2  # class label 2
-                └── ... # audio files
-
 """
 
+import argparse
 import os
 import shutil
-import argparse
 import random
-import re
-from concurrent.futures import ThreadPoolExecutor
-from typing import List, Dict, Set
+import concurrent.futures
+import threading
 
+# Global lock to ensure thread-safe file operations
+move_lock = threading.Lock()
 
 def parse_arguments():
-    parser = argparse.ArgumentParser(description='Sort audio files into train and test directories.')
-    parser.add_argument('-i', '--input_dir', required=True, help='Input directory containing audio files')
-    parser.add_argument('-o', '--output_dir', required=True, help='Output directory to store sorted audio files')
-    parser.add_argument('-s', '--split', type=float, default=0.8, help='Split ratio for train and test data (default: 0.8)')
-    parser.add_argument('-t', '--threads', type=int, default=1, help='Number of threads to use (default: 1)')
+    parser = argparse.ArgumentParser(
+        description="Sort audio files into Train and Test directories based on class labels."
+    )
+    parser.add_argument("-i", "--input_dir", required=True, help="Input directory containing audio files")
+    parser.add_argument("-o", "--output_dir", required=True, help="Output directory to store sorted audio files")
+    parser.add_argument("-s", "--split", type=float, default=0.8, help="Split ratio for train and test data (default: 0.8)")
+    parser.add_argument("-t", "--threads", type=int, default=1, help="Number of threads to use (default: 1)")
+    parser.add_argument("-h", "--help", action="help", help="Show this help message and exit")
     return parser.parse_args()
 
+def safe_move(source_file, target_file):
+    """Moves a file in a thread-safe manner."""
+    with move_lock:
+        shutil.move(source_file, target_file)
 
-def extract_original_filename(filename: str) -> str:
-    """Extract the original filename without augmentation info and extension."""
-    # Assumes filename format: original_name_augmentation_random.wav
-    # If the file doesn't follow this pattern, return the filename without extension
-    if '_' in filename:
-        return filename.split('_')[0]
-    return os.path.splitext(filename)[0]
+def process_class(class_label, input_dir, output_dir, split_ratio):
+    class_path = os.path.join(input_dir, class_label)
+    if not os.path.isdir(class_path):
+        return
 
+    # Create class directories in both Train and Test outputs
+    train_class_dir = os.path.join(output_dir, "Train", class_label)
+    test_class_dir = os.path.join(output_dir, "Test", class_label)
+    os.makedirs(train_class_dir, exist_ok=True)
+    os.makedirs(test_class_dir, exist_ok=True)
 
-def get_class_files(input_dir: str) -> Dict[str, List[str]]:
-    """Get files organized by class."""
-    class_files = {}
-    
-    for class_name in os.listdir(input_dir):
-        class_path = os.path.join(input_dir, class_name)
-        if os.path.isdir(class_path):
-            files = [f for f in os.listdir(class_path) if os.path.isfile(os.path.join(class_path, f))]
-            class_files[class_name] = files
-    
-    return class_files
+    # Group audio files by original file name
+    groups = {}
+    for filename in os.listdir(class_path):
+        if not filename.lower().endswith(".wav"):
+            continue
+        # Expecting format: {original_file_name}_{augmentation_technique}_{random_value}.wav
+        parts = filename.split("_")
+        if len(parts) < 3:
+            print(f"Skipping file {filename} in {class_label}: filename format does not match.")
+            continue
+        original = parts[0]
+        groups.setdefault(original, []).append(filename)
 
-
-def split_files_by_original_name(class_files: Dict[str, List[str]], split_ratio: float) -> Dict[str, Dict[str, List[str]]]:
-    """Split files into train and test sets based on original filenames."""
-    result = {"train": {}, "test": {}}
-    
-    for class_name, files in class_files.items():
-        # Group files by original name
-        original_name_groups = {}
-        for file in files:
-            original_name = extract_original_filename(file)
-            if original_name not in original_name_groups:
-                original_name_groups[original_name] = []
-            original_name_groups[original_name].append(file)
-        
-        # Get unique original names and shuffle
-        original_names = list(original_name_groups.keys())
-        random.shuffle(original_names)
-        
-        # Split based on original names
-        split_index = int(len(original_names) * split_ratio)
-        train_names = original_names[:split_index]
-        test_names = original_names[split_index:]
-        
-        # Collect files for train and test
-        train_files = []
-        test_files = []
-        
-        for name in train_names:
-            train_files.extend(original_name_groups[name])
-        
-        for name in test_names:
-            test_files.extend(original_name_groups[name])
-        
-        result["train"][class_name] = train_files
-        result["test"][class_name] = test_files
-    
-    return result
-
-
-def create_directory_structure(output_dir: str, class_names: List[str]):
-    """Create the directory structure for output."""
-    os.makedirs(output_dir, exist_ok=True)
-    
-    for split in ["Train", "Test"]:
-        split_dir = os.path.join(output_dir, split)
-        os.makedirs(split_dir, exist_ok=True)
-        
-        for class_name in class_names:
-            class_dir = os.path.join(split_dir, class_name)
-            os.makedirs(class_dir, exist_ok=True)
-
-
-def copy_file(input_dir: str, output_dir: str, class_name: str, filename: str, split: str):
-    """Copy a file from input directory to output directory."""
-    src = os.path.join(input_dir, class_name, filename)
-    dst = os.path.join(output_dir, split, class_name, filename)
-    shutil.copy2(src, dst)
-
+    # For each group, assign all files to either Train or Test based on split ratio
+    for original, file_list in groups.items():
+        target_dir = train_class_dir if random.random() < split_ratio else test_class_dir
+        for file in file_list:
+            source_file = os.path.join(class_path, file)
+            target_file = os.path.join(target_dir, file)
+            safe_move(source_file, target_file)
 
 def main():
     args = parse_arguments()
-    
-    # Check if input directory exists
-    if not os.path.isdir(args.input_dir):
-        print(f"Error: Input directory '{args.input_dir}' does not exist.")
-        return
-    
-    # Get class names and files
-    class_files = get_class_files(args.input_dir)
-    class_names = list(class_files.keys())
-    
-    # Create output directory structure
-    create_directory_structure(args.output_dir, class_names)
-    
-    # Split files into train and test sets
-    split_files = split_files_by_original_name(class_files, args.split)
-    
-    # Copy files to output directories using multiple threads
-    with ThreadPoolExecutor(max_workers=args.threads) as executor:
-        # Copy train files
-        for class_name, files in split_files["train"].items():
-            for file in files:
-                executor.submit(copy_file, args.input_dir, args.output_dir, class_name, file, "Train")
-        
-        # Copy test files
-        for class_name, files in split_files["test"].items():
-            for file in files:
-                executor.submit(copy_file, args.input_dir, args.output_dir, class_name, file, "Test")
-    
-    print(f"Finished sorting files. Train/Test split: {args.split}/{1-args.split}")
-    
-    # Print statistics
-    total_files = sum(len(files) for files in class_files.values())
-    train_files = sum(len(files) for files in split_files["train"].values())
-    test_files = sum(len(files) for files in split_files["test"].values())
-    
-    print(f"Total files: {total_files}")
-    print(f"Train files: {train_files} ({train_files/total_files:.2%})")
-    print(f"Test files: {test_files} ({test_files/total_files:.2%})")
 
+    # Check if the input directory exists
+    if not os.path.exists(args.input_dir):
+        print(f"Error: Input directory '{args.input_dir}' does not exist.")
+        exit(1)
+
+    # Create the output directory along with Train and Test subdirectories if they don't exist
+    for sub in ["Train", "Test"]:
+        os.makedirs(os.path.join(args.output_dir, sub), exist_ok=True)
+
+    # Get list of class labels (subdirectories in the input directory)
+    class_labels = [d for d in os.listdir(args.input_dir) if os.path.isdir(os.path.join(args.input_dir, d))]
+    if not class_labels:
+        print("No class label directories found in the input directory.")
+        exit(1)
+
+    # Process each class directory using the specified number of threads
+    if args.threads > 1:
+        with concurrent.futures.ThreadPoolExecutor(max_workers=args.threads) as executor:
+            futures = [
+                executor.submit(process_class, class_label, args.input_dir, args.output_dir, args.split)
+                for class_label in class_labels
+            ]
+            concurrent.futures.wait(futures)
+    else:
+        for class_label in class_labels:
+            process_class(class_label, args.input_dir, args.output_dir, args.split)
+
+    print("Audio files have been successfully sorted into Train and Test directories.")
 
 if __name__ == "__main__":
     main()
