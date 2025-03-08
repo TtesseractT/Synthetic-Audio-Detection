@@ -1,0 +1,11 @@
+Input audio files 
+
+1. file_renamer.py
+2. audio_converter.py 
+3. audio_augment.py
+4. audio_segmenter.py
+5. dataset_manager.py
+6. file_manager.py
+7. submodel_trainer.py
+8. model_merger.py
+9. inference_runner.py

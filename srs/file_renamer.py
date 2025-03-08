@@ -10,7 +10,7 @@ def hash_file(file_path):
     with open(file_path, 'rb') as afile:
         buf = afile.read()
         hasher.update(buf)
-    return hasher.hexdigest()[:6]
+    return hasher.hexdigest()[:16]
 
 def rename_files_in_directory(input_dir, recursive=False):
     if recursive:

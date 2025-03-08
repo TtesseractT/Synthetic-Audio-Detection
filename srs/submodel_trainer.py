@@ -506,7 +506,6 @@ def get_dataloaders(args):
     return train_loader, val_loader
 
 
-
 def initialize_weights(model):
     """Initializes the weights of the model."""
     for module in model.modules():
