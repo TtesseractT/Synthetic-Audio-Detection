@@ -1,5 +1,7 @@
 # Multi-Head Binary Classification System for Synthetic Data Detection
 
+###### Author: Sabian Hibbs
+
 ## Introduction
 Detecting AI-generated (synthetic) data, such as deepfake audio, is a critical challenge in modern machine learning. This white paper presents a **multi-head binary classification system** for distinguishing real data from synthetic data. The system is designed for audio deepfake detection and consists of multiple neural network “heads” (sub-models) whose outputs are combined in a way that amplifies detection sensitivity. The approach integrates a rigorous probabilistic model, an ensemble of classifiers with a novel output aggregation strategy, and a comprehensive data processing pipeline. Each component – from data preprocessing to model inference – is modular, making the system flexible and suitable for inclusion in a project README or technical documentation.
 
