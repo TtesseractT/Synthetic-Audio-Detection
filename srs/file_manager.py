@@ -20,6 +20,7 @@ For each class folder, the script groups files by a “group key”. In this exa
 the group key is defined as the part of the filename before the first underscore.
 For example, from:
     1f6999ff03018e9a_add_white_noise_0.002498277_Segment_134.wav
+    
 the group key is "1f6999ff03018e9a".
 
 For each group that exists in both train and test, the script checks the number
