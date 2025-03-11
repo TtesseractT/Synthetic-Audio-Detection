@@ -506,57 +506,114 @@ Ensures consistent and unique filenames.
 
 #### Audio Conversion
 ```sh
-python audio_converter.py --input-dir path/to/data --output-dir path/to/converted
+python audio_convert.py --input-dir path/to/data --output-dir path/to/converted
 ```
+- **Arguments**:
+    - `-i`, `--input`: Path to the input directory containing audio files (required).
+    - `-o`, `--output`: Path to the output directory where converted audio files will be saved (required).
 Normalizes audio format and sampling rate.
 
 #### Audio Augmentation
 ```sh
 python audio_augment.py --input-dir path/to/converted --output-dir path/to/augmented
 ```
+- **Arguments**:
+    - `-i`, `--input`: Input file or folder (required).
+    - `-o`, `--output`: Output folder (required).
+    - `-c`, `--csv`: CSV output file path (optional).
+    - `-p`, `--pool-size`: Number of processes in the pool (default: number of CPU cores).
 Generates augmented audio examples for improved training.
 
 #### Audio Segmentation
 ```sh
-python audio_segmenter.py --input-dir path/to/augmented --output-dir path/to/segmented
+python audio_segmenter.py --input-dir path/to/augmented --output-dir path/to/segmented --segment-duration 4
 ```
+- **`--input-dir`**: Directory containing the augmented audio files.
+- **`--output-dir`**: Directory to save the segmented audio files.
+- **`--segment-duration`**: Duration of each audio segment in seconds (default: 4 seconds).
+
 Splits audio files into fixed-length segments.
 
 #### Dataset Management
 ```sh
-python dataset_manager.py --input-dir path/to/segmented --output-dir path/to/dataset_split
+python dataset_manager.py --input-dir path/to/segmented --output-dir path/to/dataset_split --split 0.8 --threads 4
 ```
+- **`--input-dir`**: Input directory containing class folders with audio files.
+- **`--output-dir`**: Output directory to store split audio files (with train/test subdirectories).
+- **`--split`**: Split ratio for train (e.g., 0.8 means 80% train, 20% test; default: 0.5).
+- **`--threads`**: Number of threads to use (default: 1).
+
 Splits data into training and testing sets.
 
 #### Overlap Checking (Logging Mixed data across classes)
 ```sh
 python file_manager.py --input-dir path/to/dataset_split
 ```
+- **`--input-dir`**: Base directory containing 'train' and 'test' subdirectories with class folders.
 
 #### Optional --fix broken audio directories (Cleanup)
 ```sh
 python file_manager.py --input-dir path/to/dataset_split --fix
 ```
+- **`--fix`**: If provided, move files from the minority side into the majority side for each overlapping group.
 
 Ensures no data leakage between training and testing sets.
 
 ### 2. Model Training
-Train the individual sub-models:
+Train the individual sub-models using multiple GPUs and various arguments:
+
 ```sh
-python submodel_trainer.py --train-dir path/to/dataset_split/train --epochs 50 
+python submodel_trainer.py --data-dir path/to/dataset_split/train \
+    --batch-size 32 \
+    --epochs 50 \
+    --lr 0.001 \
+    --workers 20 \
+    --seed 42 \
+    --gpu 0 \
+    --num_gpus 2 \
+    --checkpoint-dir ./checkpoints \
+    --resume path/to/checkpoint.pth \
+    --Class0 Real \
+    --Class1 Synthetic \
+    --evaluate
 ```
+
+- **`--data-dir`**: Path to the dataset.
+- **`--batch-size`**: Batch size per GPU.
+- **`--epochs`**: Number of total epochs to run.
+- **`--lr`**: Initial learning rate.
+- **`--workers`**: Number of data loading workers.
+- **`--seed`**: Seed for initializing training.
+- **`--gpu`**: GPU id to use.
+- **`--num_gpus`**: Number of GPUs to use.
+- **`--checkpoint-dir`**: Directory to save checkpoints.
+- **`--resume`**: Path to resume checkpoint.
+- **`--evaluate`**: Evaluate model on validation set.
+- **`--Class0`**: Name of Class 0 (e.g., Real).
+- **`--Class1`**: Name of Class 1 (e.g., Synthetic).
 
 ### 3. Model Merging
 Merge trained sub-models into a unified multi-head model:
 ```sh
-python model_merger.py --model-dir path/to/trained_models --output path/to/merged_model.pth
+python model_merger.py --submodels-folder path/to/trained_models --csv-file submodels.csv --output-path path/to/merged_model.pth
 ```
+- **`--submodels-folder`**: Folder containing sub-model `.pth` files.
+- **`--csv-file`**: CSV file with columns "model_filename", "synthetic_class", and "real_class".
+- **`--model-name`**: Name of the model architecture (default: 'resnet18').
+- **`--output-path`**: Path to save the merged model `.pth` file.
 
 ### 4. Inference
 Run the trained model on new audio data:
 ```sh
-python inference_runner.py --model path/to/merged_model.pth --input path/to/audio
+python inference_runner.py --merged-model path/to/merged_model.pth --audio path/to/audio --threshold 0.5 --device cuda --confidence-threshold 0.45 --smooth --output-json results.json
 ```
+- **`--merged-model`**: Path to the merged model `.pth` file.
+- **`--audio`**: Path to the input WAV file.
+- **`--threshold`**: Threshold for deciding Real vs Synthetic (default: 0.5).
+- **`--device`**: Device to run the inference on (default: "cuda").
+- **`--confidence-threshold`**: Confidence threshold for segments (default: 0.45).
+- **`--smooth`**: Apply smoothing across windows (optional).
+- **`--output-json`**: Path to save the output JSON file (default: "results.json").
 
 ## Model Architecture
 The classification model consists of multiple convolutional neural network (CNN) sub-models. Each sub-model:
@@ -589,4 +646,3 @@ If you use this work in your research, please cite:
 
 ## License
 This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
->>>>>>> a12eb2306c0658b99aa2a17d1d9ce336c2599cd5
