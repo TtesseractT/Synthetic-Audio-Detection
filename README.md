@@ -1,7 +1,6 @@
-<<<<<<< HEAD
-# Synthetic Audio Detection (Extended README)
+# Synthetic Audio Detection
 
-A multi-head binary classification system for detecting and classifying synthetic audio, featuring a shared feature-learning backbone and an ensemble of sub-models. This README aims to provide a thorough, professional overview of the entire pipeline—complete with illustrative Python code snippets, usage examples, and references to the theoretical background described in the associated whitepaper.
+A multi-head binary classification system for detecting and classifying synthetic audio, featuring a shared feature-learning backbone and an ensemble of sub-models. This README aims to provide a thorough, overview of the entire pipeline—complete with illustrative Python code snippets, usage examples, and references to the theoretical background described in the associated whitepaper.
 
 ---
 
