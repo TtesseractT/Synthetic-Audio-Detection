@@ -423,13 +423,48 @@ An example final JSON:
 
 ## Code Requirements
 
-- Python 3.x
-- [PyTorch](https://pytorch.org/)
-- [torchaudio](https://pytorch.org/audio/stable/index.html)
-- [timm](https://github.com/huggingface/pytorch-image-models)
-- [Librosa](https://librosa.org/)
-- [tqdm](https://github.com/tqdm/tqdm)
-- [ffmpeg](https://ffmpeg.org/)
+### Prerequisites
+
+Ensure you have the following installed:
+
+- **Python 3.10**
+- **PyTorch**: [pytorch.org](https://pytorch.org/)
+- **torchaudio**: [pytorch.org/audio](https://pytorch.org/audio/stable/index.html)
+- **timm**: [github.com/huggingface/pytorch-image-models](https://github.com/huggingface/pytorch-image-models)
+- **Librosa**: [librosa.org](https://librosa.org/)
+- **tqdm**: [github.com/tqdm/tqdm](https://github.com/tqdm/tqdm)
+- **ffmpeg**: [ffmpeg.org](https://ffmpeg.org/)
+
+### Python Packages
+
+Install the following Python packages:
+
+```bash
+pip install librosa>=0.8.0 soundfile>=0.10.3.post1 scipy>=1.7.0
+pip install numpy>=1.21.0 pandas>=1.3.0
+pip install tqdm>=4.62.0
+pip install torch>=1.10.0 torchaudio>=0.10.0 torchvision>=0.11.0 tensorboard>=2.8.0
+pip install timm>=0.4.12
+```
+
+### Summary
+
+- **Audio processing & signal analysis**:
+    - `librosa>=0.8.0`
+    - `soundfile>=0.10.3.post1`
+    - `scipy>=1.7.0`
+- **Data manipulation**:
+    - `numpy>=1.21.0`
+    - `pandas>=1.3.0`
+- **Progress bar**:
+    - `tqdm>=4.62.0`
+- **PyTorch ecosystem**:
+    - `torch>=1.10.0`
+    - `torchaudio>=0.10.0`
+    - `torchvision>=0.11.0`
+    - `tensorboard>=2.8.0`
+- **Model architectures**:
+    - `timm>=0.4.12`
 
 Installation:
 ```bash
