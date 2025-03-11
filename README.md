@@ -427,8 +427,9 @@ An example final JSON:
 
 Ensure you have the following installed:
 
+- **CUDA 11.8 | 12.4 |s 12.6**
 - **Python 3.10**
-- **PyTorch**: [pytorch.org](https://pytorch.org/)
+- **PyTorch - pip distro**: [pytorch.org](https://pytorch.org/)
 - **torchaudio**: [pytorch.org/audio](https://pytorch.org/audio/stable/index.html)
 - **timm**: [github.com/huggingface/pytorch-image-models](https://github.com/huggingface/pytorch-image-models)
 - **Librosa**: [librosa.org](https://librosa.org/)
