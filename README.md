@@ -444,6 +444,8 @@ MIT License – see [LICENSE](LICENSE) for details.
 
 ---
 
+##### For more in-depth mathematical treatment and performance analysis, refer to the accompanying **whitepaper**.
+
 ## Citation
 
 If you use this system in your research or publication, please cite:
@@ -456,8 +458,6 @@ If you use this system in your research or publication, please cite:
 }
 ```
 
-For more in-depth mathematical treatment and performance analysis, refer to the accompanying **whitepaper**.
-=======
 # Multi-Head Binary Classification System for Synthetic Data Detection
 
 ## Overview
@@ -477,17 +477,17 @@ This repository contains the implementation of a **multi-head binary classificat
 ## Installation
 ### Prerequisites
 Ensure you have the following installed:
-- Python 3.8+
+- Python 3.10
 - PyTorch
 - FFmpeg (for audio processing)
 - Librosa (for feature extraction)
-- NumPy, Pandas, tqdm (for data processing)
+- NumPy, Pandas, tqdm, timm, scikit-learn, scipy (for data processing)
 
 ### Setup
 1. Clone the repository:
    ```sh
-   git clone https://github.com/your-repo-name.git
-   cd your-repo-name
+   git clone https://github.com/TtesseractT/Synthetic-Audio-Detection.git
+   cd Synthetic-Audio-Detection
    ```
 2. Install dependencies:
    ```sh
@@ -528,16 +528,22 @@ python dataset_manager.py --input-dir path/to/segmented --output-dir path/to/dat
 ```
 Splits data into training and testing sets.
 
-#### Overlap Checking
+#### Overlap Checking (Logging Mixed data across classes)
 ```sh
 python file_manager.py --input-dir path/to/dataset_split
 ```
+
+#### Optional --fix broken audio directories (Cleanup)
+```sh
+python file_manager.py --input-dir path/to/dataset_split --fix
+```
+
 Ensures no data leakage between training and testing sets.
 
 ### 2. Model Training
 Train the individual sub-models:
 ```sh
-python submodel_trainer.py --train-dir path/to/dataset_split/train --epochs 50
+python submodel_trainer.py --train-dir path/to/dataset_split/train --epochs 50 
 ```
 
 ### 3. Model Merging
