@@ -1,315 +1,459 @@
-╔══════════════════════════════════════════════════════════════════════════════════╗
-║   M U L T I - H E A D   B I N A R Y   C L A S S I F I C A T I O N   S Y S T E M  ║
-║          W I T H   S H A R E D   F E A T U R E   L E A R N I N G (WHITE PAPER)   ║
-╚══════════════════════════════════════════════════════════════════════════════════╝
+# Synthetic Audio Detection (Extended README)
 
-===============================================================================
-ABSTRACT
-===============================================================================
-Synthetic data detection increasingly demands not only distinguishing real vs. fake 
-content, but also identifying the specific type of synthetic source. This paper 
-presents a multi-head binary classification system that uses a shared feature 
-extraction backbone with multiple binary classifier heads. Each head detects one 
-synthetic class, while a common output node merges their “real” outputs into a 
-unified real-data detector. The result is a modular, extensible architecture: 
-new heads can be added whenever a new synthetic category emerges, without 
-retraining existing ones. The proposed system is evaluated on audio data with 
-substantial augmentation to enhance robustness. Empirical results demonstrate 
-that this approach efficiently discriminates real vs. multiple synthetic classes, 
-attaining high accuracy and low confusion across classes. Moreover, it facilitates 
-incremental growth, an essential attribute in domains like deepfake detection, 
-where novel synthetic methods arise frequently.
+A multi-head binary classification system for detecting and classifying synthetic audio, featuring a shared feature-learning backbone and an ensemble of sub-models. This README aims to provide a thorough, professional overview of the entire pipeline—complete with illustrative Python code snippets, usage examples, and references to the theoretical background described in the associated whitepaper.
 
-===============================================================================
-1. INTRODUCTION
-===============================================================================
-Binary classification—differentiating between two categories—is a cornerstone 
-of supervised learning, applied extensively in authentication (e.g., real vs. 
-fake) and other tasks. However, “fake” itself can be a broad concept: as diverse 
-synthetic data generation methods become widespread, a single “fake” label may 
-not suffice to identify the exact synthetic source. Traditional multi-class 
-classifiers can handle multiple categories (e.g., real, fake1, fake2, ...), but 
-they do not naturally accommodate new classes without retraining on all data.
+---
 
-This paper proposes a multi-head binary classification architecture in which 
-each synthetic class is handled by its own one-vs-all head, and a shared “real” 
-output is formed by averaging the real logit outputs across these heads. This 
-model is both accurate—comparable to a unified multi-class approach—and 
-modular, allowing addition of new synthetic classes simply by training a new 
-binary head. Although demonstrated here for audio data with spectral inputs, 
-the framework is generalizable to other media types (images, video) and relevant 
-to any scenario requiring real-time classification of multiple known anomaly 
-types (synthetic classes) versus normal (real) data.
+## Table of Contents
 
-===============================================================================
-2. MODEL ARCHITECTURE
-===============================================================================
-2.1. Shared Feature Extraction
-------------------------------
-At the core of the system is a pre-trained convolutional backbone (e.g., 
-ResNet18), adapted to handle spectrogram images of size 512×512. This backbone 
-serves as a shared feature extractor, converting each input into a high-level 
-feature representation.
+1. [Introduction](#introduction)
+2. [Architecture Overview](#architecture-overview)
+3. [Scripts and Workflow](#scripts-and-workflow)
+   1. [File Renamer](#1-file-renamer-filerenamerpy)
+   2. [Audio Converter](#2-audio-converter-audioconverterpy)
+   3. [Audio Augmenter](#3-audio-augmenter-audio_augmentpy)
+   4. [Audio Segmenter](#4-audio-segmenter-audio_segmenterpy)
+   5. [Dataset Manager](#5-dataset-manager-dataset_managerpy)
+   6. [File Manager (Overlap Checker)](#6-file-manager-overlap-checker-file_managerpy)
+   7. [Submodel Trainer](#7-submodel-trainer-submodel_trainerpy)
+   8. [Model Merger](#8-model-merger-model_mergerpy)
+   9. [Inference Runner](#9-inference-runner-inference_runnerpy)
+4. [Sample Inference Output](#sample-inference-output)
+5. [Code Requirements](#code-requirements)
+6. [License](#license)
+7. [Citation](#citation)
 
-2.2. Multiple Binary Heads
---------------------------
-On top of these shared features, we attach N binary classifier heads 
-(X₁, X₂, …, Xₙ), one per synthetic class. Each head outputs two logits: 
-one for “Synthetic” (class Xᵢ) and one for “Real.” Thus, submodel i acts 
-as a one-vs-all (or one-vs-real) binary classifier. Collectively, they cover 
-the set of synthetic classes. By design:
+---
 
-• Xᵢ(x): Probability/logit that sample x is synthetic of type i.  
-• Yᵢ(x): Probability/logit that sample x is real, per head i.
+## Introduction
 
-2.3. Merged Real Output
------------------------
-Though each head has its own real-data logit, the final architecture combines 
-these real logits into a single merged node. Formally, if each submodel i outputs 
-zᵢ^(syn) for the synthetic dimension and zᵢ^(real) for real, the merged real logit 
-is:
+This system aims to robustly distinguish **Real** audio from multiple types of **Synthetic** audio through an **ensemble** of binary classifiers. Each sub-model identifies whether an audio clip is real or one particular synthetic type, and all sub-model outputs are aggregated in a unique way: the real logits are averaged to ensure consensus for a *Real* classification, while any strong synthetic indicator from a sub-model can flag the clip as *Synthetic*.
 
-  z^(Real) = (1/N) ∑ zᵢ^(real),   for i=1..N.
+The pipeline is subdivided into multiple scripts that cover every step of data preparation, model training, and inference, allowing a flexible and modular approach to synthetic audio detection.
 
-Hence, the final classification vector has N+1 components:
+## Architecture Overview
 
-  [ z₁^(syn), z₂^(syn), ..., zₙ^(syn),  z^(Real) ],
+At a high level, the pipeline transforms raw audio data into 4-second, single-channel segments at 32 kHz. Each segment is turned into a mel-spectrogram and passed through sub-models. Each sub-model is a ResNet-based CNN producing two logits: `[Real, Synthetic]`. During **merging**, the real logits from all heads are averaged, forming an **ensemble** that allows for robust detection:
 
-where z^(Real) is the average of all real logits. At inference, a softmax over 
-these N+1 components yields probabilities for each synthetic class plus real. 
-The highest probability determines the final label.
+```
+┌──────────────────────────── Shared CNN Backbone ─────────────────────────────┐
+│                                                                              │
+│                (Spectrogram) -> [Conv Layers + Blocks] -> Features           │
+│                                                                              │
+├────────────────────────────────────┬─────────────────────────────────────────┤
+│ Sub-model #1 (Binary: Real vs S1)  │   Sub-model #2 (Binary: Real vs S2)     │
+│ [2-Logit Output: z1_real, z1_syn]  │   [2-Logit Output: z2_real, z2_syn]     │
+│               ...                  │                 ...                     │
+├────────────────────────────────────┴─────────────────────────────────────────┤
+│ Final Ensemble: [syn1, syn2, ... synN, mean_of_all_real_logits]              │
+└──────────────────────────────────────────────────────────────────────────────┘
+```
 
-2.4. Architectural Rationale
-----------------------------
-• **Scalability & Modularity**: Adding a new synthetic class requires training 
-  a new head (Xₙ₊₁) only, leaving previous heads intact.  
-• **Shared Real Understanding**: A single integrated concept of “real” is 
-  enforced by averaging the real logits, ensuring consistent classification 
-  of genuine data.  
-• **Efficiency**: The backbone is trained/fine-tuned once and reused across 
-  submodels, reducing computational overhead relative to maintaining entirely 
-  separate networks.
+---
 
-===============================================================================
-3. MATHEMATICAL FORMULATION
-===============================================================================
-3.1. Binary Head Training
--------------------------
-Let x ∈ ℝ^d be an input sample and y ∈ {0,1} its label, where y=1 indicates 
-synthetic class i, and y=0 indicates real. For head i, define:
+## Scripts and Workflow
 
-  zᵢ(x) = [ zᵢ^(syn)(x),  zᵢ^(real)(x) ].
+Below is a recommended order of script usage along with illustrative code snippets from the source files. Each script has its own command-line interface.
 
-A softmax on these two logits yields:
+### 1. File Renamer (`file_renamer.py`)
 
-  Pᵢ(Xᵢ|x)   = exp(zᵢ^(syn)(x)) / [exp(zᵢ^(syn)(x)) + exp(zᵢ^(real)(x))],
-  Pᵢ(Real|x) = exp(zᵢ^(real)(x)) / [exp(zᵢ^(syn)(x)) + exp(zᵢ^(real)(x))].
+**Purpose**: Renames audio files to a unique, hash-based filename.
 
-The binary cross-entropy loss for head i is:
+- **Key Function**: `hash_file(file_path)`
 
-  Lᵢ = – [ y ⋅ log Pᵢ(Xᵢ|x)  +  (1 – y) ⋅ log Pᵢ(Real|x) ].
+```python
+import hashlib
 
-3.2. Merged Output for Multi-Class Inference
---------------------------------------------
-At inference, the final model’s logit vector is:
+def hash_file(file_path):
+    """Generate a hash for a file and return the first 16 characters."""
+    hasher = hashlib.sha256()
+    with open(file_path, 'rb') as afile:
+        buf = afile.read()
+        hasher.update(buf)
+    return hasher.hexdigest()[:16]
+```
 
-  z(x) = [ z₁^(syn),  z₂^(syn),  …,  zₙ^(syn),  z^(Real) ],
+- **Usage**:
+```bash
+python file_renamer.py -i /path/to/audio -r
+```
 
-where:
+When run, this script recursively scans `/path/to/audio` and renames each file (e.g., `myFile.wav` -> `9af81b232c9aa123.wav`) so that all future processing steps remain consistent.
 
-  z^(Real) = (1/N) ∑ zᵢ^(real).
+---
 
-A softmax gives probabilities for each of the N synthetic classes plus Real:
+### 2. Audio Converter (`audio_converter.py`)
 
-  P(Xᵢ|x)  = exp(zᵢ^(syn)) / Σ [exp(zⱼ^(syn)) + exp(z^(Real))],
-  P(Real|x) = exp(z^(Real)) / Σ [exp(zⱼ^(syn)) + exp(z^(Real))].
+**Purpose**: Converts raw audio from various formats/bitrates to a standard WAV (32kHz, mono, 16-bit).
 
-The predicted label is whichever has the highest probability.
+- **Notable Snippet**:
+```python
+command = [
+    'ffmpeg',
+    '-i', input_file,
+    '-ar', '32000',  # Sample rate: 32000 Hz
+    '-ac', '1',      # Mono channel
+    '-sample_fmt', 's16',
+    '-f', 'wav', output_file
+]
+subprocess.run(command, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+```
 
-===============================================================================
-4. DATA PROCESSING PIPELINE
-===============================================================================
-4.1. Audio Conversion and Segmentation
---------------------------------------
-Audio files of various formats (MP3, FLAC, etc.) are converted to a standard 
-format (WAV, 32 kHz, mono). Long files are then split into 4-second segments to 
-create uniform-length training/inference samples.
+- **Usage**:
+```bash
+python audio_convert.py -i ./raw_audio -o ./converted_audio
+```
 
-4.2. Waveform-Level Augmentation
---------------------------------
-Each 4s segment is optionally duplicated into multiple augmented versions:
-• Time Stretch / Pitch Shift  
-• Dynamic Range Compression  
-• Adding White Noise / Phase Shift  
-• Filtering & Time Shifts  
-Such augmentations expand the dataset and improve model robustness.
+The converter ensures uniform audio parameters, essential for consistent downstream processing and spectrogram generation.
 
-4.3. Spectrogram Transformation
--------------------------------
-Each (possibly augmented) 4s waveform is transformed into a mel-spectrogram 
-(128 mel bands, log scale). We resize to 512×512 pixels and replicate channels 
-to make it suitable for a standard CNN backbone (e.g., ResNet).
+---
 
-4.4. Dataset Organization
--------------------------
-A dataset manager arranges samples into class-labeled folders (Real, SyntheticOne, 
-SyntheticTwo, etc.) and splits them into train/test sets. This structured approach 
-supports efficient model training and evaluation.
+### 3. Audio Augmenter (`audio_augment.py`)
 
-===============================================================================
-5. TRAINING & MODEL MERGING
-===============================================================================
-5.1. Individual Submodel Training
----------------------------------
-Each synthetic class i is trained separately vs. real data, using cross-entropy. 
-We use partial transfer learning with a pre-trained ResNet backbone, freezing 
-most layers initially. AdamW optimizes the classification head plus selectively 
-unfrozen layers. Each submodel yields a 2-output network specialized in detecting 
-class i vs. real.
+**Purpose**: Applies various transformations (noise addition, pitch/time shifting, compression, etc.) to expand dataset diversity.
 
-5.2. Combining into a Multi-Head Model
---------------------------------------
-Once all submodels are trained, they are loaded into a single PyTorch module, 
-one head per synthetic class. During inference, each submodel provides 
-zᵢ^(syn), zᵢ^(real). The real logits are averaged:
+- **Key Techniques**:
+  - **Time Stretching** (speed up/slow down)
+  - **Pitch Shifting** (±2 semitones)
+  - **Add White Noise**
+  - **Random Filtering**
 
-  z^(Real) = (1/N) ∑ zᵢ^(real),
+- **Example: Augmenting with White Noise** (simplified code excerpt):
+```python
+def augment_add_white_noise(y, min_vol=0.001, max_vol=0.05):
+    rms = np.sqrt(np.mean(y ** 2))
+    noise_amp = np.random.uniform(min_vol, max_vol) * rms
+    noise = noise_amp * np.random.normal(size=y.shape[0])
+    return y + noise, noise_amp
+```
 
-producing N+1 outputs overall. This architecture thus emulates an (N+1)-class 
-classifier in a modular manner.
+- **Usage**:
+```bash
+python audio_augmneter.py -i ./converted_audio/sample.wav -o ./augmented
+```
 
-5.3. Extensibility
-------------------
-If a new synthetic class arises (Xₙ₊₁), one trains a new binary submodel. 
-Then it is appended to the multi-head model’s module list, leaving prior heads 
-untouched. This plug-and-play strategy ensures minimal retraining and easy 
-maintenance.
+This script can generate multiple augmented variants (e.g., 10) per original audio, labeled with descriptive suffixes (e.g., `..._add_white_noise_0.004.wav`).
 
-===============================================================================
-6. INFERENCE & DEPLOYMENT
-===============================================================================
-6.1. Overlapping Windows for Inference
---------------------------------------
-For real-time or batch inference, audio is again segmented into 4s frames. 
-Each frame is spectrogram-transformed and passed to the multi-head model. 
-Optionally, we compute an aggregated decision across all segments for the 
-entire audio file by averaging or majority voting.
+---
 
-6.2. Output Format (JSON)
--------------------------
-The system outputs per-segment predictions (start_sec, end_sec, label) plus 
-final percentage breakdown. For instance:
+### 4. Audio Segmenter (`audio_segmenter.py`)
 
+**Purpose**: Splits audio into uniform 4-second clips (mono, 32kHz).
+
+- **Core FFmpeg Segmenting**:
+```python
+ffmpeg_cmd = [
+    'ffmpeg', '-loglevel', 'error', '-i', input_filepath,
+    '-ac', '1',
+    '-ar', '32000',
+    '-filter:a', 'pan=mono|c0=0.5*c0+0.5*c1',
+    '-f', 'segment',
+    '-segment_time', str(segment_duration),
+    '-reset_timestamps', '1',
+    segment_pattern
+]
+subprocess.run(ffmpeg_cmd, check=True)
+```
+
+- **Usage**:
+```bash
+python audio_segmenter.py -i ./augmented -o ./segmented
+```
+
+Generates 4-second chunks like `abcdef1234567890_Segment_000.wav`, `_Segment_001.wav`, etc.
+
+---
+
+### 5. Dataset Manager (`dataset_manager.py`)
+
+**Purpose**: Creates structured `train/` and `test/` splits by random sampling each class folder.
+
+- **Random File Splitting** example:
+```python
+files = [f for f in os.listdir(source_folder) if f.lower().endswith(".wav")]
+num_train = int(round(split_ratio * len(files)))
+train_files = set(random.sample(files, num_train))
+test_files = set(files) - train_files
+```
+
+- **Usage**:
+```bash
+python dataset_manager.py -i ./segmented -o ./data_split -s 0.8
+```
+
+Organizes final data into:
+```
+data_split/
+    ├── train/
+    │   ├── class0/ # audio data
+    │   └── class1/ # audio data
+    └── test/
+        ├── class0/ # audio data
+        └── class1/ # audio data
+```
+
+---
+
+### 6. File Manager (Overlap Checker) (`file_manager.py`)
+
+**Purpose**: Prevents data leakage by ensuring no overlap of segments from the same source file in both train and test sets.
+
+- **Core Overlap Check**:
+```python
+def extract_group_key(filename):
+    if "_" in filename:
+        return filename.split("_")[0]
+    return os.path.splitext(filename)[0]
+```
+
+- **Usage**:
+```bash
+python file_manager.py -i ./data_split --fix
+```
+
+Moves or removes duplicates from minority sets to maintain a strict separation.
+
+---
+
+### 7. Submodel Trainer (`submodel_trainer.py`)
+
+**Purpose**: Trains individual binary classifiers (Real vs. **one** Synthetic type) using mel-spectrogram input.
+
+- **Key Points**:
+  1. **Mel-Spectrogram Generation** using `torchaudio.transforms.MelSpectrogram`.
+  2. **Model**: ResNet backbone from TIMM, final FC layer outputs 2 logits (`[Real, Synthetic]`).
+  3. **Loss**: Cross-entropy for binary classification.
+
+---
+
+<details>
+<summary>Code Snippet</summary>
+
+```python
+model = timm.create_model(args.model_name, pretrained=True, num_classes=0)
+# Optionally freeze base.
+# Then attach a 2-output classification head.
+model.head = nn.Sequential(
+    nn.AdaptiveAvgPool2d(1),
+    nn.Flatten(),
+    nn.Linear(model.num_features, 512),
+    nn.BatchNorm1d(512),
+    nn.ReLU(),
+    nn.Dropout(0.5),
+    nn.Linear(512, 2)  # [Real, Synthetic]
+)
+```
+
+</details>
+
+- **Usage**:
+```bash
+python submodel_trainer.py --data-dir ./data_split --model-name resnet18 --epochs 30
+```
+
+**Note**: In practice, you may train multiple sub-models, each specialized for detecting a different synthetic category, or simply train repeated times with different random seeds. This yields diverse classifiers that we later merge.
+
+#### Visual Explanation: Training Multiple Sub-models
+
+Imagine you have different synthetic classes, like `SyntheticA, SyntheticB, SyntheticC`. You can produce separate labeled datasets (each marking real vs. a specific synthetic type), or you can filter your data to a binary partition each time. Each sub-model is trained to distinguish Real from one type (or a subset of synthetic types). You end up with multiple `.pth` files:
+
+```
+                  /[DATA: Real vs SyntheticA]  =>  Submodel_A.pth
+                 /                             
+                /  [DATA: Real vs SyntheticB]  =>  Submodel_B.pth
+[Various tasks]/                              
+               \                               
+                \  [DATA: Real vs SyntheticC]  =>  Submodel_C.pth
+                 \
+                  \[DATA: Real vs SyntheticN]  =>  Submodel_N.pth
+
+┌───────────────────────────────┐
+│ [DATA: Real vs SyntheticA]    │
+│                               │
+│ Submodel_A.pth                │
+└───────────────────────────────┘
+┌───────────────────────────────┐
+│ [DATA: Real vs SyntheticB]    │
+│                               │
+│ Submodel_B.pth                │
+└───────────────────────────────┘
+┌───────────────────────────────┐
+│ [DATA: Real vs SyntheticC]    │
+│                               │
+│ Submodel_C.pth                │
+└───────────────────────────────┘
+┌───────────────────────────────┐
+│ [DATA: Real vs SyntheticN]    │
+│                               │
+│ Submodel_N.pth                │
+└───────────────────────────────┘
+```
+
+This approach leverages separate training runs to learn different decision boundaries, improving robustness once aggregated.
+
+---
+
+### 8. Model Merger (`model_merger.py`)
+
+**Purpose**: Loads multiple trained 2-logit sub-models (each `[Real, Synthetic]`) and merges them into an ensemble model that outputs `[syn1, syn2, ..., synN, real_averaged]`.
+
+- **Core Merging Excerpt**:
+```python
+sub_models = []
+for idx, entry in enumerate(submodel_entries, start=1):
+    sm = load_sub_model(model_path, device, model_name=args.model_name)
+    sub_models.append(sm)
+
+merged = ModularMultiHeadClassifier(sub_models)
+# This class's forward() concatenates synthetic logits and averages real logits.
+```
+
+- **Usage**:
+```bash
+python model_merger.py --submodels-folder ./trained_models \
+  --csv-file submodels.csv --output-path merged_model.pth
+```
+
+In a typical `submodels.csv`:
+```
+model_filename,synthetic_class,real_class
+submodelA.pth,SyntheticA,Real
+submodelB.pth,SyntheticB,Real
+submodelC.pth,SyntheticC,Real
+```
+
+#### Visual Explanation: Aggregating Sub-models
+
+Below is an ASCII depiction of how the merger combines the multiple binary heads. Each sub-model’s `[Real, Synthetic]` logits are separated into `zX_real` and `zX_syn`. All `zX_syn` are kept distinct, while the real logits are averaged:
+
+```
+Submodel A -> ( zA_real , zA_syn )
+Submodel B -> ( zB_real , zB_syn )
+Submodel C -> ( zC_real , zC_syn )
+
+                [   zA_syn    zB_syn    zC_syn   average( zA_real , zB_real , zC_real ) ]
+                                    ↓
+Final Ensemble Output => [ synA , synB , synC , real_averaged ]
+```
+
+**Why Average the Real Logits?**
+
+- The system requires *all* sub-models to be confident the audio is real to achieve a high `real_averaged` score.
+- If *any* sub-model strongly suspects synthetic, its synthetic logit can exceed the real average, tilting the final classification to *fake*.
+
+**Merging** thus produces an integrated model that can detect multiple synthetic classes while maintaining a single *Real* output, making inference simpler.
+
+
+**Purpose**: Loads multiple trained 2-logit sub-models and merges them into an ensemble model that outputs `[syn1, syn2, ..., synN, real_averaged]`.
+
+- **Core Merging Excerpt**:
+```python
+sub_models = []
+for idx, entry in enumerate(submodel_entries, start=1):
+    sm = load_sub_model(model_path, device, model_name=args.model_name)
+    sub_models.append(sm)
+
+merged = ModularMultiHeadClassifier(sub_models)
+# This class's forward() concatenates synthetic logits and averages real logits.
+```
+
+- **Usage**:
+```bash
+python model_merger.py --submodels-folder ./trained_models \
+  --csv-file submodels.csv --output-path merged_model.pth
+```
+
+**`submodels.csv`** typically has columns like:
+```
+model_filename,synthetic_class,real_class
+modelA.pth,Synthetic1,Real
+modelB.pth,Synthetic2,Real
+...
+```
+
+---
+
+### 9. Inference Runner (`inference_runner.py`)
+
+**Purpose**: Applies the merged model to new audio, automatically handling segmentation, spectrogram creation, model inference, and final JSON output.
+
+- **Core Logic**:
+```python
+with torch.no_grad():
+    outputs = model(spec_batch)  # => [batch_size, N+1]
+    # interpret: columns 0..N-1 => synthetic heads, last => real_averaged
+    # Decide label by comparing max synthetic vs real.
+```
+
+- **Usage**:
+```bash
+python inference_runner.py \
+  --merged-model merged_model.pth \
+  --audio newAudio.wav \
+  --output-json prediction.json
+```
+
+The script processes overlapping 4s windows from `newAudio.wav`, infers each chunk, and aggregates results.
+
+---
+
+## Sample Inference Output
+
+An example final JSON:
+```json
 {
-  "filename": "./Dataset/Wav/test.wav",
+  "filename": "./newAudio.wav",
   "segments": [
-    {"start_sec": 0.0, "end_sec": 4.0, "label": "SyntheticOne"},
-    {"start_sec": 4.0, "end_sec": 8.0, "label": "SyntheticOne"}
+    {"start_sec": 0.0, "end_sec": 4.0, "label": "SyntheticOne", "confidence": 0.93},
+    {"start_sec": 4.0, "end_sec": 8.0, "label": "Real", "confidence": 0.89},
+    {"start_sec": 8.0, "end_sec": 12.0, "label": "SyntheticTwo", "confidence": 0.95}
   ],
   "percentages": {
-    "SyntheticOne": 50.24,
-    "SyntheticTwo": 50.24,
-    "SyntheticThree": 50.24,
-    "SyntheticFour": 50.24,
-    "SyntheticFive": 50.24,
-    "SyntheticSix": 50.24,
-    "SyntheticSeven": 50.24,
-    "SyntheticEight": 50.24,
-    "Real": 48.03
+    "SyntheticOne": 30.0,
+    "SyntheticTwo": 45.0,
+    "Real": 25.0
   }
 }
+```
 
-6.3. Real-Time Considerations
------------------------------
-By sliding a 4s window with partial overlap, classification can be done nearly 
-in real-time. GPU acceleration is highly beneficial for inference on large 
-batches of segments. Deployed systems might run this pipeline on-the-fly for 
-each incoming audio stream.
+- **segments**: Per-chunk classification.
+- **percentages**: Overall proportion of each predicted class.
 
-===============================================================================
-7. PERFORMANCE EVALUATION
-===============================================================================
-7.1. Metrics and Results
-------------------------
-Using accuracy, precision, recall, and F1-score on a held-out test set: each 
-binary submodel achieved ~95–99% detection for its specific synthetic class 
-vs. real. When merged, the resulting multi-class classification (N synthetic 
-classes + Real) maintained ~97–98% overall accuracy, closely matching a 
-standard multi-class model.
+---
 
-7.2. Confusion Analysis
------------------------
-Most errors arose in borderline real vs. synthetic distinctions. Rarely did 
-the model mistake one synthetic class for another. This clarifies that each 
-binary head robustly detects its specialized class. Missed detections were 
-often cases of unusual synthetic or real audio that confounded the submodel.
+## Code Requirements
 
-7.3. Robustness & Generalization
---------------------------------
-Heavy data augmentation enhanced resilience to noise, pitch changes, or 
-environmental variations. The shared Real node also improved consistency 
-by averaging multiple “real” opinions. However, truly unseen synthetic 
-methods remain a challenge (the model defaults to Real if no head is 
-triggered).
+- Python 3.x
+- [PyTorch](https://pytorch.org/)
+- [torchaudio](https://pytorch.org/audio/stable/index.html)
+- [timm](https://github.com/huggingface/pytorch-image-models)
+- [Librosa](https://librosa.org/)
+- [tqdm](https://github.com/tqdm/tqdm)
+- [ffmpeg](https://ffmpeg.org/)
 
-===============================================================================
-8. PRACTICAL APPLICATIONS
-===============================================================================
-• **Deepfake Audio Detection**: Identifies which deepfake generation method 
-  is used, while still labeling new methods as Real if no submodel exists.  
-• **Synthetic Data Attribution**: Distinguishes outputs of known generative 
-  models for audit trails and authenticity checks.  
-• **Modular Expansion**: In scenarios where new synthetic types appear 
-  frequently, a new head is swiftly added.  
-• **Multimodal Extension**: The concept can be adapted to images/videos, 
-  applying the same multi-head architecture to detect multiple forging 
-  techniques.
+Installation:
+```bash
+pip install torch torchaudio timm librosa tqdm
+```
 
-===============================================================================
-9. RELATED WORK
-===============================================================================
-One-vs-all classification has long been recognized as a powerful method to 
-extend binary learners to multiple classes (Rifkin & Klautau, 2004). Multi-head 
-networks are frequently used in multi-task scenarios, leveraging shared lower 
-layers and distinct heads for separate tasks. In deepfake detection, ensemble 
-and multi-task approaches similarly show improved robustness vs. single-task 
-models, especially when each method addresses a different generator. Our 
-system merges these ideas by implementing a multi-head approach with 
-averaged real outputs, bridging single- vs. multi-class classification 
-advantages.
+---
 
-===============================================================================
-10. CONCLUSION
-===============================================================================
-This work introduces a multi-head binary classifier framework that efficiently 
-and accurately distinguishes multiple synthetic classes from real data by 
-sharing learned features and merging real outputs. The modular design allows 
-quick integration of new submodels as novel synthetic types emerge, a key 
-demand in dynamic environments like deepfake detection. Empirical tests 
-demonstrate that each submodel excels at its one-vs-all assignment, producing 
-an overall system whose multi-class performance competes with traditional 
-single-model approaches. While challenges remain in open-set scenarios (where 
-completely unknown fakes appear), this framework provides a scalable platform 
-for the continually evolving synthetic data landscape.
+## License
 
-===============================================================================
-REFERENCES
-===============================================================================
-• Rifkin, R. & Klautau, A. (2004). In Defense of One-Vs-All Classification. 
-  Journal of Machine Learning Research, 5, 101–141.
+MIT License – see [LICENSE](LICENSE) for details.
 
-• Giatsoglou, N., et al. (2023). Investigation of ensemble methods for the 
-  detection of deepfake face manipulations. arXiv:2304.07395.
+---
 
-• Park, D.S., et al. (2019). SpecAugment: A Simple Data Augmentation Method for 
-  Automatic Speech Recognition. In Proceedings of Interspeech 2019.
+## Citation
 
-• Tesla AI Team. (2021). HydraNet Architecture for Multi-Task Learning. 
-  (Company blog/whitepaper).  
+If you use this system in your research or publication, please cite:
 
-• Musashi, K., et al. (2020). One-vs-All Binary Classifiers for Open-Set 
-  Recognition in Medical Imaging. IEEE CVPR Workshops.  
+```bibtex
+@article{hibbs2025synthetic,
+  title={Multi-Head Binary Classification System with Shared Feature Learning},
+  author={Hibbs, Sabian},
+  year={2025}
+}
+```
 
-• Pangeanic. (2022). Audio Data Augmentation: Techniques and Methods. 
-  Company Blog.  
-
+For more in-depth mathematical treatment and performance analysis, refer to the accompanying **whitepaper**.
