@@ -1,5 +1,3 @@
-Input audio files 
-
 1. file_renamer.py
 2. audio_converter.py 
 3. audio_augment.py
