@@ -322,11 +322,11 @@ Based on the design and modular nature of our system, we anticipate the followin
     \item \textbf{Efficiency:} While running multiple sub-models incurs higher computational cost than a single model, the merged model is optimised to run all sub-models in a single forward pass on a GPU. Offline preprocessing (conversion, augmentation, segmentation) is parallelised to handle large datasets efficiently.
     \item \textbf{Real-Time Feasibility:} With proper batching and GPU acceleration, the system is capable of near-real-time inference on 4-second audio segments, making it suitable for applications requiring timely detection.
 \end{itemize}
-
 \begin{table}[t]
+\centering
 \caption{Computational Requirements for Different ResNet Backbones}
 \label{tab:model_comparison}
-\centering
+\resizebox{\columnwidth}{!}{%
 \begin{tabular}{|l|c|c|c|c|}
 \hline
 \textbf{Model Type} & \textbf{Parameters (M)} & \textbf{Layers} & \textbf{Size (MB)} & \textbf{GPU Memory (GB)} \\
@@ -341,15 +341,19 @@ ResNet-101 & 44.5 & 101 & 178 & $< 4$ \\
 \hline
 ResNet-152 & 60.2 & 152 & 240 & $< 5$ \\
 \hline
-\end{tabular}
+\end{tabular}%
+}
+\\[\baselineskip]
+{\footnotesize \textit{Comparison of computational requirements for various ResNet architectures that can be used as feature extraction backbones in the EUCLID system. Deeper networks provide better feature extraction at the cost of increased computational demands. (S.Hibbs 2025)}}
 \end{table}
 
-While our system supports various ResNet architectures as the backbone feature extractor, resource considerations may influence the specific choice of model. Table \ref{tab:model_comparison} illustrates the parameter count, layer depth, model size, and approximate GPU memory requirements for different ResNet variants. The scalability of our approach allows practitioners to select an appropriate backbone based on the available computational resources and desired inference speed. For applications with limited computational capacity, a ResNet-18 backbone provides adequate performance while maintaining efficiency. Conversely, when prioritizing detection accuracy for high-stakes applications, the deeper ResNet-152 architecture offers enhanced feature extraction capabilities at the expense of increased computational requirements.
+While our system supports various ResNet architectures as the backbone feature extractor, resource considerations may influence the specific choice of model. Table~\ref{tab:model_comparison} illustrates the parameter count, layer depth, model size, and approximate GPU memory requirements for different ResNet variants. The scalability of our approach allows practitioners to select an appropriate backbone based on the available computational resources and desired inference speed. For applications with limited computational capacity, a ResNet-18 backbone provides adequate performance while maintaining efficiency. Conversely, when prioritizing detection accuracy for high-stakes applications, the deeper ResNet-152 architecture offers enhanced feature extraction capabilities at the expense of increased computational requirements.
 
 \begin{table}[t]
+\centering
 \caption{Training Performance with ResNet-152 on Various GPU Configurations}
 \label{tab:training_performance}
-\centering
+\resizebox{\columnwidth}{!}{%
 \begin{tabular}{|l|l|c|c|c|c|}
 \hline
 \textbf{GPU} & \textbf{Model Type} & \textbf{Test Corpus} & \textbf{Train Corpus} & \textbf{Classes} & \textbf{Time/Epoch (H)} \\
@@ -362,10 +366,13 @@ Nvidia A100 $\times$ 2 & ResNet-152 & 28M & 90M & 2 & 10.0 \\
 \hline
 Nvidia A100 $\times$ 4 & ResNet-152 & 28M & 90M & 2 & 5.0 \\
 \hline
-\end{tabular}
+\end{tabular}%
+}
+\\[\baselineskip]
+{\footnotesize \textit{Empirical training performance metrics using the ResNet-152 backbone with our standard dataset (90M training samples, 28M test samples) across various GPU configurations. The nearly linear reduction in training time demonstrates efficient parallel scaling of our implementation. (S.Hibbs 2025)}}
 \end{table}
 
-Table \ref{tab:training_performance} presents empirical training performance metrics when using the ResNet-152 backbone on various GPU configurations. The data illustrates the substantial training time reduction achieved through parallel computing. With our dataset comprising 90 million training samples and 28 million testing samples, a single Nvidia 3090 GPU requires approximately 18.5 hours per training epoch. The training time reduces nearly linearly with additional computational resources, with four Nvidia A100 GPUs completing an epoch in just 5 hours—a 73\% reduction compared to the 3090 baseline. These performance characteristics demonstrate that our system can efficiently process large-scale datasets when suitable computational infrastructure is available. For production deployments, we recommend multi-GPU training to minimize the time required for model convergence, especially when using deeper architectures like ResNet-152 that yield higher accuracy at the cost of increased computational demands.
+Table~\ref{tab:training_performance} presents empirical training performance metrics when using the ResNet-152 backbone on various GPU configurations. The data illustrates the substantial training time reduction achieved through parallel computing. With our dataset comprising 90 million training samples and 28 million testing samples, a single Nvidia 3090 GPU requires approximately 18.5 hours per training epoch. The training time reduces nearly linearly with additional computational resources, with four Nvidia A100 GPUs completing an epoch in just 5 hours—a 73\% reduction compared to the 3090 baseline. These performance characteristics demonstrate that our system can efficiently process large-scale datasets when suitable computational infrastructure is available. For production deployments, we recommend multi-GPU training to minimize the time required for model convergence, especially when using deeper architectures like ResNet-152 that yield higher accuracy at the cost of increased computational demands.
 
 
 \section{Conclusion}
@@ -383,6 +390,12 @@ Future research will investigate further optimisation of parameter sharing among
 \section*{Figure Index}
 \begin{itemize}
     \item Figure (1): Architecture of the multi-head ensemble model
+\end{itemize}
+
+\section*{Table Index}
+\begin{itemize}
+    \item Table (1): Computational Requirements for Different ResNet Backbones
+    \item Table (2): Training Performance with ResNet-152 on Various GPU Configurations
 \end{itemize}
 
 \section*{Equation Index}
