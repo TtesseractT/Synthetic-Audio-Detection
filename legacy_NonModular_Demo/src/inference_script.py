@@ -1,3 +1,11 @@
+#!/usr/bin/env python3
+# Company: Uhmbrella Ltd 2025
+# Author: Sabian Hibbs
+# Date: 2025-01-01
+# Version: 1.0
+# License: MIT
+
+
 import torch
 import torchaudio
 import torchvision.transforms as transforms
@@ -19,7 +27,7 @@ import random
 import json
 import concurrent.futures
 
-# -------------------- SEEDING --------------------
+
 seed = 9
 random.seed(seed)
 np.random.seed(seed)
@@ -30,7 +38,6 @@ if torch.cuda.is_available():
     torch.backends.cudnn.benchmark = False
 
 
-# -------------------- CONFIG CLASSES --------------------
 @dataclass
 class AudioConfig:
     """Configuration for audio processing parameters"""
@@ -56,8 +63,7 @@ class SpectrogramConfig:
 
 class AudioAnalyzer:
     def __init__(self, model_path: str, device: str = 'cuda'):
-        # -------------------- (1) UPDATED CLASSES TO INCLUDE Riffusion --------------------
-        self.classes = ['Real', 'Suno', 'Udio', 'Unknown', 'Riffusion']
+        self.classes = ['Class1', 'Class2', 'Class3', 'Class4', 'Class5']
         self.device = torch.device(device if torch.cuda.is_available() else 'cpu')
 
         self.audio_config = AudioConfig()
@@ -75,13 +81,13 @@ class AudioAnalyzer:
         )
         self.amplitude_to_db = torchaudio.transforms.AmplitudeToDB(top_db=self.spec_config.top_db)
 
-        # -------------------- (2) ADDED Riffusion TO SENSITIVITY FACTORS --------------------
+        
         self.sensitivity_factors = {
-            'Real': 1.7,
-            'Suno': 0.9,
-            'Udio': 0.6,
-            'Unknown': 1.0,
-            'Riffusion': 1.0  # Adjust this if you need a different factor
+            'class1': 1.0,
+            'class2': 1.0,
+            'class3': 1.0,
+            'class4': 1.0,
+            'class5': 1.0
         }
         self.confidence_threshold = 0.45
 
@@ -129,8 +135,6 @@ class AudioAnalyzer:
         return model
 
 
-
-    # -------------------- AUDIO UTILS --------------------
     def normalize_audio(self, waveform: torch.Tensor) -> torch.Tensor:
         waveform = waveform - waveform.mean()
         peak = torch.abs(waveform).max()
@@ -301,7 +305,6 @@ class AudioAnalyzer:
         }
 
 
-# -------------------- PARALLEL CPU PREPROCESSING EXAMPLE --------------------
 def parallel_analyze(analyzer: AudioAnalyzer, audio_files: List[Path]) -> List[Dict]:
     """
     Example parallel pipeline:
@@ -396,7 +399,7 @@ def analyze_waveform(analyzer: AudioAnalyzer, waveform: torch.Tensor, sample_rat
         "segments": segments
     }
 
-# -------------------- MAIN --------------------
+
 def main():
     parser = argparse.ArgumentParser(description='5-Class Audio Inference with Mixed Precision.')
     parser.add_argument('--audio_path', type=str, help='Path to single audio file')
