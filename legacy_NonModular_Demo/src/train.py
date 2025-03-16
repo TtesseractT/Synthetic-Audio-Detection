@@ -1,11 +1,3 @@
-#!/usr/bin/env python3
-# Company: Uhmbrella Ltd 2025
-# Author: Sabian Hibbs
-# Date: 2025-01-01
-# Version: 1.0
-# License: MIT
-
-
 import os
 import sys
 import argparse
@@ -30,26 +22,26 @@ import torch.nn.init as init
 # Suppress warnings
 warnings.filterwarnings("ignore")
 
+
 def parse_args():
     """Parses command-line arguments."""
     parser = argparse.ArgumentParser(description='Audio Classification Training')
     parser.add_argument('--data-dir', default='./dataset', type=str, help='Path to dataset')
     parser.add_argument('--batch-size', default=32, type=int, help='Batch size per GPU')
-    parser.add_argument('--epochs', default=100, type=int, help='Number of total epochs to run')
-    parser.add_argument('--lr', default=0.001, type=float, help='Initial learning rate')  # Adjusted
-    parser.add_argument('--workers', default=20, type=int, help='Number of data loading workers')
+    parser.add_argument('--epochs', default=30, type=int, help='Number of total epochs to run')
+    parser.add_argument('--lr', default=0.0001, type=float, help='Initial learning rate')  # Adjusted
+    parser.add_argument('--workers', default=1, type=int, help='Number of data loading workers')
     parser.add_argument('--seed', default=42, type=int, help='Seed for initializing training.')
     parser.add_argument('--gpu', default=0, type=int, help='GPU id to use.')
     parser.add_argument('--num_gpus', default=1, type=int, help='Number of GPUs to use')
     parser.add_argument('--checkpoint-dir', default='./checkpoints', type=str, help='Directory to save checkpoints')
-    parser.add_argument('--resume', default='', type=str, help='Path to resume checkpoint')
+    parser.add_argument('--resume', default='./checkpoints', type=str, help='Path to resume checkpoint')
     parser.add_argument('--evaluate', dest='evaluate', action='store_true', help='Evaluate model on validation set')
-    parser.add_argument('--Class0', default='Real', type=str, help='Name of Class 0 eg. Real')
-    parser.add_argument('--Class1', default='Class1', type=str, help='Name of Class 1 eg. Training platform')
 
     # Define available models
     available_models = timm.list_models('resnet*')
-    parser.add_argument('--model-name', default='resnet18', type=str, choices=available_models, help='Name of model to use')
+    parser.add_argument('--model-name', default='resnet151', type=str,
+                        choices=available_models, help='Name of model to use')
     return parser.parse_args()
 
 
@@ -69,23 +61,17 @@ def setup_logging():
 class SpectrogramDataset(Dataset):
     """Custom dataset for loading audio files and converting them to spectrograms."""
 
-    def __init__(self, data_dir, mode, transform=None, class_names=None):
+    def __init__(self, data_dir, mode, transform=None):
         """
         Args:
             data_dir (str): Path to the dataset directory.
             mode (str): Mode of the dataset ('train' or 'test').
             transform (callable, optional): Optional transform to be applied on a sample.
-            class_names (list, optional): List of class names.
         """
         self.mode = mode
         self.transform = transform
 
-        # Use provided class_names or fallback to defaults
-        if class_names is None:
-            self.classes = ['Real', 'Class1']  # default values if none provided
-        else:
-            self.classes = class_names
-
+        self.classes = ['Real', 'class1', 'class2', 'class3', 'class4']
         self.class_to_idx = {cls_name: i for i, cls_name in enumerate(self.classes)}
         self.samples = self._make_dataset(data_dir)
 
@@ -100,7 +86,7 @@ class SpectrogramDataset(Dataset):
             hop_length=512,
             n_mels=128,
             f_min=20,
-            f_max=12000,
+            f_max=12000, # Adjusted f_max to 16kHz (can be lower than sample_rate/2) i.e 12000
         )
         self.amplitude_to_db = AmplitudeToDB(top_db=80)
 
@@ -393,7 +379,7 @@ def evaluate(args, model, val_loader, criterion, device):
     all_targets = []
 
     # 2) Updated to 5 classes for evaluation
-    classes = [args.Class0, args.Class1]
+    classes = ['Real', 'class1', 'class2', 'class3', 'class4']
     class_correct = [0] * 5
     class_total = [0] * 5
 
@@ -463,29 +449,33 @@ def evaluate(args, model, val_loader, criterion, device):
 def get_dataloaders(args):
     """Creates data loaders for training and validation."""
     train_transform = transforms.Compose([
-        transforms.RandomResizedCrop(512, scale=(0.8, 1.0)),
+        transforms.RandomResizedCrop(512, scale=(0.8, 1.0)),  # Changed to 512
+        # We already normalize in the dataset
     ])
 
     val_transform = transforms.Compose([
-        transforms.Resize((512, 512)),
+        transforms.Resize((512, 512)),  # Changed to 512
+        # We already normalize in the dataset
     ])
 
     train_dataset = SpectrogramDataset(
         data_dir=args.data_dir,
         mode='train',
         transform=train_transform,
-        class_names=[args.Class0, args.Class1]  # pass the class names here
     )
 
     val_dataset = SpectrogramDataset(
         data_dir=args.data_dir,
         mode='test',
         transform=val_transform,
-        class_names=[args.Class0, args.Class1]  # pass the class names here
     )
 
     # Adjust batch size for multi-GPU
-    total_batch_size = args.batch_size * args.num_gpus if args.num_gpus > 0 else args.batch_size
+    if args.num_gpus > 0:
+        total_batch_size = args.batch_size * args.num_gpus
+    else:
+        total_batch_size = args.batch_size
+
     logging.info(f"Total batch size: {total_batch_size}")
 
     train_loader = DataLoader(
@@ -529,52 +519,7 @@ def get_model(model):
 
 
 def main():
-    """Main function to run the training and evaluation.
-    1) MEL SPECTROGRAM (simplified):
-
-    For a waveform w(t) of length T:
-    
-    1. Compute Short-Time Fourier Transform (STFT) at frames n ∈ [1..N]:
-        X(n, ω) = ∑ ( w(t) ⋅ h(t - nH) ⋅ e^(-jωt) ),  (windowed & hop-based)
-
-    2. Convert to Mel scale M with triangular filterbanks:
-        S_mel(n, m) = ∑ ( |X(n, ω)|² ⋅ F_m(ω) ),       (F_m are the mel filters)
-
-    3. Convert amplitude to dB:
-        S_dB(n, m) = 10 ⋅ log10( S_mel(n, m) + ε ),   (ε to avoid log(0))
-
-    2) SOFTMAX & CROSS-ENTROPY LOSS:
-
-    Given a model f(x; θ) producing logits z = (z₁, z₂, …, z_C),
-    define probability outputs pᵢ via softmax:
-
-        pᵢ = exp(zᵢ) / ∑ ( exp(zⱼ) ),   j=1..C
-    
-    With ground-truth one-hot label y = (y₁, y₂, …, y_C),
-    the cross-entropy loss L is:
-
-        L(θ) = - ∑ ( yᵢ log pᵢ ),   i=1..C
-
-    3) PARAMETER UPDATE (ADAMW, simplified):
-
-    Let gᵗ = ∂L/∂θᵗ be the gradient at time t. AdamW updates θᵗ per step t as:
-
-    mᵗ ← β₁ m^(t-1) + (1 - β₁) gᵗ
-    vᵗ ← β₂ v^(t-1) + (1 - β₂) (gᵗ)²
-
-    m̂ᵗ = mᵗ / (1 - β₁ᵗ),   v̂ᵗ = vᵗ / (1 - β₂ᵗ)
-
-    θ^(t+1) ← θᵗ - α ⋅ m̂ᵗ / ( √v̂ᵗ + ε ) - λ ⋅ θᵗ
-
-    (α = learning rate, β₁, β₂ ∈ [0,1], ε is a small constant, λ is weight decay)
-
-    4) PREDICTION:
-
-    After forward pass zᵢ = fᵢ(x; θ),
-    predicted label ŷ = argmaxᵢ [ zᵢ ] or argmaxᵢ [ pᵢ ].
-
-    """
-    
+    """Main function to run the training and evaluation."""
     args = parse_args()
     setup_logging()
     logging.info(f"Arguments: {args}")
@@ -620,7 +565,7 @@ def main():
         nn.BatchNorm1d(256),
         nn.ReLU(),
         nn.Dropout(0.3),
-        nn.Linear(256, 2)
+        nn.Linear(256, 5)  # Now 5 classes instead of 4
     )
 
     for param in model.head.parameters():
