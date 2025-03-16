@@ -270,15 +270,6 @@ python submodel_trainer.py --data-dir ./data_split --model-name resnet18 --epoch
 Imagine you have different synthetic classes, like `SyntheticA, SyntheticB, SyntheticC`. You can produce separate labeled datasets (each marking real vs. a specific synthetic type), or you can filter your data to a binary partition each time. Each sub-model is trained to distinguish Real from one type (or a subset of synthetic types). You end up with multiple `.pth` files:
 
 ```
-                  /[DATA: Real vs SyntheticA]  =>  Submodel_A.pth
-                 /                             
-                /  [DATA: Real vs SyntheticB]  =>  Submodel_B.pth
-[Various tasks]/                              
-               \                               
-                \  [DATA: Real vs SyntheticC]  =>  Submodel_C.pth
-                 \
-                  \[DATA: Real vs SyntheticN]  =>  Submodel_N.pth
-
 ┌───────────────────────────────┐
 │ [DATA: Real vs SyntheticA]    │
 │                               │
@@ -494,18 +485,6 @@ MIT License – see [LICENSE](LICENSE) for details.
 
 ##### For more in-depth mathematical treatment and performance analysis, refer to the accompanying **whitepaper**.
 
-## Citation
-
-If you use this system in your research or publication, please cite:
-
-```bibtex
-@article{hibbs2025synthetic,
-  title={Multi-Head Binary Classification System with Shared Feature Learning},
-  author={Hibbs, Sabian},
-  year={2025}
-}
-```
-
 # Multi-Head Binary Classification System for Synthetic Data Detection
 
 ## Overview
@@ -681,15 +660,6 @@ The classification model consists of multiple convolutional neural network (CNN)
 - Extend detection to additional synthetic data modalities (e.g., video, text).
 - Optimize inference pipeline for real-time applications.
 
-## Citation
-If you use this work in your research, please cite:
-```
-@article{Hibbs2025,
-  author = {Sabian Hibbs},
-  title = {Multi-Head Binary Classification System for Synthetic Data Detection},
-  year = {2025},
-  journal = {arXiv}
-}
 ```
 
 ## License
