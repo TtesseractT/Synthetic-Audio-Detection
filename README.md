@@ -270,15 +270,6 @@ python submodel_trainer.py --data-dir ./data_split --model-name resnet18 --epoch
 Imagine you have different synthetic classes, like `SyntheticA, SyntheticB, SyntheticC`. You can produce separate labeled datasets (each marking real vs. a specific synthetic type), or you can filter your data to a binary partition each time. Each sub-model is trained to distinguish Real from one type (or a subset of synthetic types). You end up with multiple `.pth` files:
 
 ```
-                  /[DATA: Real vs SyntheticA]  =>  Submodel_A.pth
-                 /                             
-                /  [DATA: Real vs SyntheticB]  =>  Submodel_B.pth
-[Various tasks]/                              
-               \                               
-                \  [DATA: Real vs SyntheticC]  =>  Submodel_C.pth
-                 \
-                  \[DATA: Real vs SyntheticN]  =>  Submodel_N.pth
-
 ┌───────────────────────────────┐
 │ [DATA: Real vs SyntheticA]    │
 │                               │
