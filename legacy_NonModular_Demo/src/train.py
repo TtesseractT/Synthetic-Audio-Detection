@@ -652,19 +652,24 @@ def main():
         is_best = val_acc > best_acc
         best_acc = max(val_acc, best_acc)
 
+        # Save checkpoint for every epoch
+        os.makedirs(args.checkpoint_dir, exist_ok=True)
+        checkpoint_path = os.path.join(args.checkpoint_dir, f'epoch_{epoch}_acc_{val_acc:.2f}.pth')
+        state_dict = get_model(model).state_dict()
+        torch.save({
+            'epoch': epoch,
+            'state_dict': state_dict,
+            'best_acc': best_acc,
+            'optimizer': optimizer.state_dict(),
+            'scheduler': scheduler.state_dict(),
+            'total_steps': total_steps
+        }, checkpoint_path)
+        
+        # Log differently if it's the best model so far
         if is_best:
-            os.makedirs(args.checkpoint_dir, exist_ok=True)
-            checkpoint_path = os.path.join(args.checkpoint_dir, 'model_best.pth')
-            state_dict = get_model(model).state_dict()
-            torch.save({
-                'epoch': epoch,
-                'state_dict': state_dict,
-                'best_acc': best_acc,
-                'optimizer': optimizer.state_dict(),
-                'scheduler': scheduler.state_dict(),
-                'total_steps': total_steps
-            }, checkpoint_path)
             logging.info(f'Saved best model with accuracy: {val_acc:.2f}%')
+        else:
+            logging.info(f'Saved checkpoint for epoch {epoch} with accuracy: {val_acc:.2f}%')
 
         writer.add_scalar('Loss/train_epoch', train_loss, epoch)
         writer.add_scalar('Accuracy/train_epoch', train_acc, epoch)
