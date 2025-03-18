@@ -43,7 +43,7 @@ class AudioConfig:
     """Configuration for audio processing parameters"""
     target_sample_rate: int = 32000
     window_size: float = 4.0  # seconds
-    overlap: float = 0.85  # 75% overlap
+    overlap: float = 0.85  
     normalize_audio: bool = True
 
 
