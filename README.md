@@ -1,3 +1,25 @@
+<div align="center">
+    <h1>Synthetic Audio Detection System</h1>
+    <p>A multi-head binary classification approach for detecting AI-generated audio</p>
+    <a href="./Uhmbrella_Technical_Whitepaper.pdf">
+        <img src="https://img.shields.io/badge/Whitepaper-PDF-red.svg" alt="Technical Whitepaper">
+    </a>
+    <a href="https://github.com/TtesseractT/Synthetic-Audio-Detection/blob/main/LICENSE">
+        <img src="https://img.shields.io/badge/License-MIT-blue.svg" alt="License">
+    </a>
+    <a href="https://github.com/TtesseractT/Synthetic-Audio-Detection">
+        <img src="https://img.shields.io/github/stars/TtesseractT/Synthetic-Audio-Detection?style=social" alt="GitHub stars">
+    </a>
+</div>
+
+<p align="center">
+    <a href="./Uhmbrella_Technical_Whitepaper.pdf">
+        <img src="https://img.shields.io/badge/Download-Technical_Whitepaper-blue?style=for-the-badge&logo=adobe-acrobat-reader" alt="Download Technical Whitepaper">
+    </a>
+</p>
+
+---
+
 # Synthetic Audio Detection
 
 A multi-head binary classification system for detecting and classifying synthetic audio, featuring a shared feature-learning backbone and an ensemble of sub-models. This README aims to provide a thorough, overview of the entire pipeline—complete with illustrative Python code snippets, usage examples, and references to the theoretical background described in the associated whitepaper.
