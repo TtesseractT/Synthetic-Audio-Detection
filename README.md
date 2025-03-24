@@ -29,7 +29,6 @@ A multi-head binary classification system for detecting and classifying syntheti
 1. [Introduction](#introduction)
 2. [Architecture Overview](#architecture-overview)
 3. [Accuracy Metrics](#accuracy-metrics)
-   - [Datasets Used](#datasets-used)
 4. [Scripts and Workflow](#scripts-and-workflow)
    1. [File Renamer](#1-file-renamer-filerenamerpy)
    2. [Audio Converter](#2-audio-converter-audioconverterpy)
@@ -93,24 +92,9 @@ Below is a summary of the classification metrics obtained during internal testin
 
 | Class             | Precision | Recall | F1-Score | Support |
 |-------------------|-----------|--------|----------|---------|
-| **Real**          | 1.00      | 0.99   | 0.99     | 253514  |
-| **Suno**          | 0.99      | 0.98   | 0.98     | 222670  |
-| **Udio**          | 0.97      | 0.99   | 0.98     | 231370  |
-| **Unknown**       | 0.97      | 0.91   | 0.94     | 20204   |
-| **Riffusion**     | 0.98      | 0.98   | 0.98     | 112736  |
 | **Overall Accuracy**  |         |        | **0.98** | 840494  |
 | **Macro Average**     | 0.98    | 0.97   | 0.98     | 840494  |
 | **Weighted Average**  | 0.98    | 0.98   | 0.98     | 840494  |
-
-## Datasets Used
-
-| Dataset     | Description / Source                                                                       |
-|-------------|--------------------------------------------------------------------------------------------|
-| **Real**    | FMA Dataset - Med. [GitHub](https://github.com/mdeff/fma)                                  |
-| **Suno**    | Details not provided                                                                       |
-| **Udio**    | All music downloaded individually from various websites (free from the explore tab)        |
-| **Riffusion** | Details not provided                                                                       |
-| **Unknown** | Music Gen - AudioCraft – Mix augmented Real through reshape                                |
 
 ---
 
