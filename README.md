@@ -28,7 +28,9 @@ A multi-head binary classification system for detecting and classifying syntheti
 
 1. [Introduction](#introduction)
 2. [Architecture Overview](#architecture-overview)
-3. [Scripts and Workflow](#scripts-and-workflow)
+3. [Accuracy Metrics](#accracy-metrics)
+   1. [Datasets Used](#datasets-used)
+4. [Scripts and Workflow](#scripts-and-workflow)
    1. [File Renamer](#1-file-renamer-filerenamerpy)
    2. [Audio Converter](#2-audio-converter-audioconverterpy)
    3. [Audio Augmenter](#3-audio-augmenter-audio_augmentpy)
@@ -38,10 +40,10 @@ A multi-head binary classification system for detecting and classifying syntheti
    7. [Submodel Trainer](#7-submodel-trainer-submodel_trainerpy)
    8. [Model Merger](#8-model-merger-model_mergerpy)
    9. [Inference Runner](#9-inference-runner-inference_runnerpy)
-4. [Sample Inference Output](#sample-inference-output)
-5. [Code Requirements](#code-requirements)
-6. [License](#license)
-7. [Citation](#citation)
+5. [Sample Inference Output](#sample-inference-output)
+6. [Code Requirements](#code-requirements)
+7. [License](#license)
+8. [Citation](#citation)
 
 ---
 
@@ -82,6 +84,37 @@ Refactored/
 ```
 
 ---
+
+## Accuracy Metrics
+
+Below is a sci table that outlines the metrics formed from internal testing of the submodels
+
+```
+2025-02-20 03:45:35,782 Saved best model with accuracy: 98.53%
+
+Epoch: 3/19
+2025-02-20 03:51:51,251
+Classification Report:
+              precision    recall  f1-score   support
+
+        Real       1.00      0.99      0.99    253514
+        Suno       0.99      0.98      0.98    222670
+        Udio       0.97      0.99      0.98    231370
+     Unknown       0.97      0.91      0.94     20204
+   Riffusion       0.98      0.98      0.98    112736
+
+    accuracy                           0.98    840494
+   macro avg       0.98      0.97      0.98    840494
+weighted avg       0.98      0.98      0.98    840494
+```
+
+### Datasets Used
+
+Real:        FMA Dataset - Med {https://github.com/mdeff/fma} 
+Suno:        │
+Udio:        │--> All music downloaded from websites indevidually (free from explore tab)
+Riffusion:   │
+Unknown:     Music Gen - AudioCraft - Mix augmented Real through reshape
 
 ## Scripts and Workflow
 
