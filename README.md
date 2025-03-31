@@ -306,11 +306,7 @@ Imagine you have different synthetic classes, like `SyntheticA, SyntheticB, Synt
 │                               │
 │ Submodel_B.pth                │
 └───────────────────────────────┘
-┌───────────────────────────────┐
-│ [DATA: Real vs SyntheticC]    │
-│                               │
-│ Submodel_C.pth                │
-└───────────────────────────────┘
+...
 ┌───────────────────────────────┐
 │ [DATA: Real vs SyntheticN]    │
 │                               │
