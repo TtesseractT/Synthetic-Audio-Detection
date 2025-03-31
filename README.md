@@ -77,7 +77,7 @@ At a high level, the pipeline transforms raw audio data into 4-second, single-ch
 Below is a summary of the classification metrics obtained during internal testing:
 
 > **Saved best model with accuracy:** 98.53%  
-> **Epoch:** 3/19
+> **Epoch:** 3
 
 | Class             | Precision | Recall | F1-Score |
 |-------------------|-----------|--------|----------|
