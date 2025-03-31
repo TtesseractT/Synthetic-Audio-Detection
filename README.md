@@ -69,17 +69,6 @@ At a high level, the pipeline transforms raw audio data into 4-second, single-ch
 │ Final Ensemble: [syn1, syn2, ... synN, mean_of_all_real_logits]              │
 └──────────────────────────────────────────────────────────────────────────────┘
 
-Refactored/
-
-┌────────────────────────────────────────────────────────────────┐
-│ Shared Feature Extraction Layers (e.g., CNN blocks, etc.)      │
-├─────────────────────┬─────────────────────┬────────────────────┤
-│   Submodel  X₁      │   Submodel  X₂      │   Submodel  X₃     │
-│  (binary output)    │  (binary output)    │  (binary output)   │
-├─────────────▲───────┴──────▲──────────────┴─────────▲──────────┤
-│             │              │                        │          │
-│             ╰───── Y (shared real-data classifier) ─╯          │
-└────────────────────────────────────────────────────────────────┘
 ```
 ---
 
