@@ -677,11 +677,6 @@ The classification model consists of multiple convolutional neural network (CNN)
 - **Efficiency**: Supports GPU acceleration for fast inference.
 - **Robustness**: Designed to reduce false negatives in synthetic audio detection.
 
-## Future Work
-- Implement weight-sharing between sub-models.
-- Extend detection to additional synthetic data modalities (e.g., video, text).
-- Optimize inference pipeline for real-time applications.
-
 ```
 
 ## License
