@@ -90,11 +90,11 @@ Below is a summary of the classification metrics obtained during internal testin
 > **Saved best model with accuracy:** 98.53%  
 > **Epoch:** 3/19
 
-| Class             | Precision | Recall | F1-Score | Support |
-|-------------------|-----------|--------|----------|---------|
-| **Overall Accuracy**  |         |        | **0.98** | 840494  |
-| **Macro Average**     | 0.98    | 0.97   | 0.98     | 840494  |
-| **Weighted Average**  | 0.98    | 0.98   | 0.98     | 840494  |
+| Class             | Precision | Recall | F1-Score |
+|-------------------|-----------|--------|----------|
+| **Overall Accuracy**  |         |        | **0.98** |
+| **Macro Average**     | 0.98    | 0.97   | 0.98     |
+| **Weighted Average**  | 0.98    | 0.98   | 0.98     |
 
 ---
 
