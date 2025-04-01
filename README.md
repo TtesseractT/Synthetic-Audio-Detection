@@ -268,7 +268,7 @@ Moves or removes duplicates from minority sets to maintain a strict separation.
 <summary>Code Snippet</summary>
 
 ```python
-model = timm.create_model(args.model_name, pretrained=True, num_classes=0)
+model = timm.create_model(args.model_name, pretrained=False, num_classes=0)
 # Optionally freeze base.
 # Then attach a 2-output classification head.
 model.head = nn.Sequential(
