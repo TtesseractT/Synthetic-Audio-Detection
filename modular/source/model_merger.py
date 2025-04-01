@@ -60,10 +60,10 @@ def load_sub_model(checkpoint_path, device, model_name='resnet18'):
 
 class ModularMultiHeadClassifier(nn.Module):
     """
-    Holds multiple sub-models, each outputting [Synthetic, Real].  
-    For each sub-model, the Synthetic output is kept individually and the 
-    Real outputs are averaged to form one final Real output.
-    
+    Holds multiple sub-models, each outputting [Real, Synthetic] (Index 0: Real, Index 1: Synthetic).
+    For each sub-model, the Synthetic output (Index 1) is kept individually and the
+    Real outputs (Index 0) are averaged to form one final Real output.
+
     Final output shape is: [B, N+1] where:
       - Columns 0 to N-1 are synthetic outputs (one per sub-model).
       - Column N is the averaged real output.
@@ -76,13 +76,18 @@ class ModularMultiHeadClassifier(nn.Module):
         synthetic_list = []
         real_list = []
         for m in self.sub_models:
-            out = m(x)  # [B, 2]
-            # Assume index 0 corresponds to Synthetic and index 1 to Real.
-            synthetic_list.append(out[:, 0:1])
-            real_list.append(out[:, 1:2])
-        synthetic_cat = torch.cat(synthetic_list, dim=1)           # [B, N]
-        real_cat = torch.cat(real_list, dim=1)                     # [B, N]
-        real_mean = torch.mean(real_cat, dim=1, keepdim=True)      # [B, 1]
+            out = m(x)  # Expected output shape: [B, 2], where index 0=Real, index 1=Synthetic
+
+            # --- CORRECTED LOGIC ---
+            # Collect the Real logit (at index 0)
+            real_list.append(out[:, 0:1])
+            # Collect the Synthetic logit (at index 1)
+            synthetic_list.append(out[:, 1:2])
+        synthetic_cat = torch.cat(synthetic_list, dim=1)           # [B, N] - Contains individual synthetic logits
+        real_cat = torch.cat(real_list, dim=1)                     # [B, N] - Contains individual real logits
+        real_mean = torch.mean(real_cat, dim=1, keepdim=True)      # [B, 1] - Contains the AVERAGE of real logits
+
+        # Final output: Concatenate individual synthetic logits and the averaged real logit
         return torch.cat([synthetic_cat, real_mean], dim=1)        # [B, N+1]
 
 def main():

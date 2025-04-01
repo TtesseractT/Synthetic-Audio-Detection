@@ -601,8 +601,9 @@ def main():
     np.random.seed(args.seed)
     random.seed(args.seed)
 
-    logging.info("Creating model with pretrained weights...")
-    model = timm.create_model(args.model_name, pretrained=True, num_classes=0)
+    logging.info("Creating model with RANDOM weights...") # Log message updated
+    # Set pretrained=False to initialize with random weights instead of ImageNet weights
+    model = timm.create_model(args.model_name, pretrained=False, num_classes=0)
 
     # Freeze parameters
     for param in model.parameters():
