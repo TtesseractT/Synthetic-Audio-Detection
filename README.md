@@ -69,17 +69,6 @@ At a high level, the pipeline transforms raw audio data into 4-second, single-ch
 │ Final Ensemble: [syn1, syn2, ... synN, mean_of_all_real_logits]              │
 └──────────────────────────────────────────────────────────────────────────────┘
 
-Refactored/
-
-┌────────────────────────────────────────────────────────────────┐
-│ Shared Feature Extraction Layers (e.g., CNN blocks, etc.)      │
-├─────────────────────┬─────────────────────┬────────────────────┤
-│   Submodel  X₁      │   Submodel  X₂      │   Submodel  X₃     │
-│  (binary output)    │  (binary output)    │  (binary output)   │
-├─────────────▲───────┴──────▲──────────────┴─────────▲──────────┤
-│             │              │                        │          │
-│             ╰───── Y (shared real-data classifier) ─╯          │
-└────────────────────────────────────────────────────────────────┘
 ```
 ---
 
@@ -88,13 +77,13 @@ Refactored/
 Below is a summary of the classification metrics obtained during internal testing:
 
 > **Saved best model with accuracy:** 98.53%  
-> **Epoch:** 3/19
+> **Epoch:** 3
 
-| Class             | Precision | Recall | F1-Score | Support |
-|-------------------|-----------|--------|----------|---------|
-| **Overall Accuracy**  |         |        | **0.98** | 840494  |
-| **Macro Average**     | 0.98    | 0.97   | 0.98     | 840494  |
-| **Weighted Average**  | 0.98    | 0.98   | 0.98     | 840494  |
+| Class             | Precision | Recall | F1-Score |
+|-------------------|-----------|--------|----------|
+| **Overall Accuracy**  |         |        | **0.98** |
+| **Macro Average**     | 0.98    | 0.97   | 0.98     |
+| **Weighted Average**  | 0.98    | 0.98   | 0.98     |
 
 ---
 
@@ -317,11 +306,7 @@ Imagine you have different synthetic classes, like `SyntheticA, SyntheticB, Synt
 │                               │
 │ Submodel_B.pth                │
 └───────────────────────────────┘
-┌───────────────────────────────┐
-│ [DATA: Real vs SyntheticC]    │
-│                               │
-│ Submodel_C.pth                │
-└───────────────────────────────┘
+...
 ┌───────────────────────────────┐
 │ [DATA: Real vs SyntheticN]    │
 │                               │
@@ -691,11 +676,6 @@ The classification model consists of multiple convolutional neural network (CNN)
 - **Scalability**: Easily extends by adding new sub-models for additional synthetic classes.
 - **Efficiency**: Supports GPU acceleration for fast inference.
 - **Robustness**: Designed to reduce false negatives in synthetic audio detection.
-
-## Future Work
-- Implement weight-sharing between sub-models.
-- Extend detection to additional synthetic data modalities (e.g., video, text).
-- Optimize inference pipeline for real-time applications.
 
 ```
 
