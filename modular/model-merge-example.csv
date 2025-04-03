@@ -1,9 +1,5 @@
 model_filename,synthetic_class,real_class
 m1.pth,SyntheticOne,Real
 m2.pth,SyntheticTwo,Real
-m3.pth,SyntheticThree,Real
-m4.pth,SyntheticFour,Real
-m5.pth,SyntheticFive,Real
-m6.pth,SyntheticSix,Real
-m7.pth,SyntheticSeven,Real
-m8.pth,SyntheticEight,Real
+...
+mN.pth,SyntheticN,Real
